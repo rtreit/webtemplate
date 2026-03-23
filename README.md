@@ -76,12 +76,172 @@ This starter can hide or reveal UI based on auth state, but static HTML pages ar
 
 The included GitHub Actions workflow deploys to Azure Static Web Apps.
 
-Before enabling deployment:
+## Developer handoff: clone to deployed site
 
-1. Create an Azure Static Web App in your target tenant.
-2. Add the GitHub secret `AZURE_STATIC_WEB_APPS_API_TOKEN`.
-3. Configure these app settings in Azure:
-   - `STORAGE_CONNECTION_STRING`
-   - `BOOTSTRAP_ADMIN_EMAIL`
-4. Enable Microsoft authentication in the Static Web App Authentication blade.
+Use these steps to reproduce the same end state in your own Azure subscription after cloning the repo.
+
+### 1. Prerequisites
+
+Install:
+
+- Azure CLI
+- GitHub CLI
+- Hugo Extended
+- Azure Functions Core Tools
+- Node.js and npm
+
+Authenticate:
+
+```powershell
+az login
+gh auth login
+```
+
+### 2. Clone and prepare the repo
+
+```powershell
+git clone https://github.com/<your-org-or-user>/webtemplate.git
+cd webtemplate
+Copy-Item .env.example .env
+```
+
+### 3. Choose your resource names
+
+Pick values for:
+
+- resource group: `webtemplate-<alias>-rg`
+- Static Web App: `webtemplate-<alias>`
+- storage account: `webtemplate<alias>cfg<suffix>`
+- location: `westus2`
+- bootstrap admin email: the Microsoft account that should reach `/admin/` first
+
+Example variables:
+
+```powershell
+$subscriptionId = '<your-subscription-id>'
+$resourceGroup = 'webtemplate-dev-rg'
+$location = 'westus2'
+$staticWebApp = 'webtemplate-dev'
+$storageAccount = 'webtemplatedevcfg01'
+$bootstrapAdmin = 'you@contoso.com'
+$repo = '<your-org-or-user>/webtemplate'
+```
+
+### 4. Register the Static Web Apps provider if needed
+
+```powershell
+az account set --subscription $subscriptionId
+az provider register --namespace Microsoft.Web --wait
+```
+
+### 5. Create Azure resources
+
+```powershell
+az group create --name $resourceGroup --location $location
+
+az storage account create `
+  --name $storageAccount `
+  --resource-group $resourceGroup `
+  --location $location `
+  --sku Standard_LRS `
+  --kind StorageV2 `
+  --allow-blob-public-access false `
+  --min-tls-version TLS1_2
+
+az staticwebapp create `
+  --name $staticWebApp `
+  --resource-group $resourceGroup `
+  --location $location `
+  --sku Free
+```
+
+### 6. Configure app settings
+
+```powershell
+$storageConnectionString = az storage account show-connection-string `
+  --name $storageAccount `
+  --resource-group $resourceGroup `
+  --query connectionString -o tsv
+
+az staticwebapp appsettings set `
+  --name $staticWebApp `
+  --resource-group $resourceGroup `
+  --setting-names `
+    "STORAGE_CONNECTION_STRING=$storageConnectionString" `
+    "BOOTSTRAP_ADMIN_EMAIL=$bootstrapAdmin"
+```
+
+### 7. Add the deployment token to GitHub
+
+```powershell
+$deployToken = az staticwebapp secrets list `
+  --name $staticWebApp `
+  --resource-group $resourceGroup `
+  --query properties.apiKey -o tsv
+
+gh secret set AZURE_STATIC_WEB_APPS_API_TOKEN `
+  --repo $repo `
+  --body $deployToken
+```
+
+### 8. Update your local `.env`
+
+Set these values in `.env`:
+
+```text
+AzureWebJobsStorage=<same storage connection string as above>
+FUNCTIONS_WORKER_RUNTIME=node
+STORAGE_CONNECTION_STRING=<same storage connection string as above>
+BOOTSTRAP_ADMIN_EMAIL=<same bootstrap admin email as above>
+```
+
+### 9. Validate locally
+
+```powershell
+.\tools\Start-LocalSite.ps1
+```
+
+Open:
+
+```text
+http://localhost:4280/
+```
+
+### 10. Trigger the first deploy
+
+If you already pushed the scaffold before the GitHub secret existed, push one empty commit:
+
+```powershell
+git commit --allow-empty -m "Trigger Azure deployment"
+git push
+```
+
+You can watch the latest deploy with:
+
+```powershell
+gh run list --repo $repo --workflow deploy.yml --limit 1
+```
+
+### 11. Verify the deployed site
+
+```powershell
+$hostname = az staticwebapp show `
+  --name $staticWebApp `
+  --resource-group $resourceGroup `
+  --query defaultHostname -o tsv
+
+Write-Host ("https://" + $hostname)
+```
+
+Check:
+
+- the site root renders starter content
+- `/api/check-role` returns anonymous JSON before sign-in
+- `/.auth/login/aad?post_login_redirect_uri=/` redirects into the SWA identity service
+
+### 12. Enable Microsoft authentication
+
+In the Azure Portal, open the Static Web App and configure Microsoft as an identity provider in the **Authentication** blade.
+
+After signing in as the bootstrap admin, open `/admin/` and manage role membership there.
 
