@@ -59,7 +59,7 @@ Login and logout are handled by Azure Static Web Apps EasyAuth:
 
 The browser checks auth state and updates the UI. Azure Functions enforce authorization using the `x-ms-client-principal` header injected by Static Web Apps after sign-in.
 
-EasyAuth sign-in stays open to any Microsoft account. This starter also includes an authorized-domain example at `/microsoft-example/`. Its protected payload comes from `/api/microsoft-example`, which only returns data to signed-in users whose `x-ms-client-principal.userDetails` email domain matches the allowed domain list. By default, `MICROSOFT_EXAMPLE_ALLOWED_DOMAINS` falls back to `microsoft.com`, and subdomains such as `azure.microsoft.com` are also allowed.
+EasyAuth sign-in stays open to any Microsoft account. This starter also includes an authorized-domain example at `/microsoft-example/`. Its protected payload comes from `/api/microsoft-example`, which only returns data to signed-in users whose `x-ms-client-principal.userDetails` email domain matches the allowed domain list. By default, `MICROSOFT_EXAMPLE_ALLOWED_DOMAINS` falls back to `microsoft.com,ntdev.microsoft.com`, and subdomains such as `azure.microsoft.com` are also allowed for each configured base domain.
 
 ## Role bootstrap
 

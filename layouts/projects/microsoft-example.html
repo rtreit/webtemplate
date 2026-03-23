@@ -2,7 +2,7 @@
 <section class="member-page">
     <h1>{{ .Title }}</h1>
     <p>{{ .Description }}</p>
-    <p>This example keeps the page shell generic, but the featured content below only comes from the backend after Azure Functions verify the signed-in user's <code>x-ms-client-principal.userDetails</code> email domain.</p>
+    <p>This route keeps its sensitive content behind an authenticated API. If your signed-in email domain is not on the allowlist, the page drops into a dedicated 403 state instead of revealing the example body.</p>
 
     <div class="member-access-status" id="microsoft-example-status">
         <h2>Authorized-domain permission check</h2>
@@ -21,6 +21,19 @@
         <p id="microsoft-example-panel-summary"></p>
         <ul class="domain-example-list" id="microsoft-example-highlights"></ul>
     </section>
+
+    <section class="forbidden-panel is-hidden" id="microsoft-example-forbidden" aria-live="polite">
+        <p class="forbidden-code">403</p>
+        <h2>Access denied</h2>
+        <p id="microsoft-example-forbidden-message">Your signed-in account is not authorized to view this protected content.</p>
+        <p class="forbidden-rule">
+            Allowed domains for this test:
+            <code id="microsoft-example-forbidden-domains">microsoft.com, ntdev.microsoft.com</code>
+        </p>
+        <div class="member-actions">
+            <a class="auth-link auth-link-logout" href="/.auth/logout?post_logout_redirect_uri=/microsoft-example/" title="Sign out">Logout</a>
+        </div>
+    </section>
 </section>
 
 <script>
@@ -28,16 +41,20 @@
     const badge = document.getElementById('microsoft-example-badge');
     const message = document.getElementById('microsoft-example-message');
     const panel = document.getElementById('microsoft-example-panel');
+    const forbiddenPanel = document.getElementById('microsoft-example-forbidden');
+    const forbiddenMessage = document.getElementById('microsoft-example-forbidden-message');
+    const forbiddenDomains = document.getElementById('microsoft-example-forbidden-domains');
     const panelTitle = document.getElementById('microsoft-example-panel-title');
     const panelSummary = document.getElementById('microsoft-example-panel-summary');
     const highlights = document.getElementById('microsoft-example-highlights');
 
-    function setState(allowed, text) {
+    function setState(allowed, text, showForbidden) {
         badge.classList.toggle('is-allowed', allowed);
         badge.classList.toggle('is-denied', !allowed);
-        badge.textContent = allowed ? 'Allowed' : 'Denied';
+        badge.textContent = allowed ? 'Allowed' : (showForbidden ? '403' : 'Denied');
         message.textContent = text;
         panel.classList.toggle('is-hidden', !allowed);
+        forbiddenPanel.classList.toggle('is-hidden', !showForbidden);
     }
 
     function renderHighlights(items) {
@@ -70,19 +87,21 @@
                 panelTitle.textContent = result.payload.title;
                 panelSummary.textContent = result.payload.summary;
                 renderHighlights(result.payload.highlights || []);
-                setState(true, result.payload.message || 'Access granted.');
+                setState(true, result.payload.message || 'Access granted.', false);
                 return;
             }
 
             if (!result.payload.authenticated) {
-                setState(false, result.payload.message || 'You are not signed in. Use Login to authenticate and test the authorized-domain example.');
+                setState(false, result.payload.message || 'You are not signed in. Use Login to authenticate and test the authorized-domain example.', false);
                 return;
             }
 
-            setState(false, result.payload.message || result.payload.accessRule || 'You are signed in, but this example requires an authorized email domain.');
+            forbiddenMessage.textContent = result.payload.message || result.payload.accessRule || 'You are signed in, but this example requires an authorized email domain.';
+            forbiddenDomains.textContent = (result.payload.allowedDomains || []).join(', ') || 'microsoft.com, ntdev.microsoft.com';
+            setState(false, 'Forbidden. This signed-in account is outside the authorized domain list.', true);
         })
         .catch(function() {
-            setState(false, 'Permission check failed. Try refreshing after signing in.');
+            setState(false, 'Permission check failed. Try refreshing after signing in.', false);
         });
 })();
 </script>

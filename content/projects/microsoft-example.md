@@ -1,6 +1,6 @@
 ---
 title: "Microsoft Authorized-Domain Example"
-description: "API-backed starter example that is only surfaced to signed-in users whose email domain matches an authorized Microsoft domain."
+description: "API-backed starter example that is only surfaced to signed-in users whose email domain matches an authorized Microsoft domain such as microsoft.com or ntdev.microsoft.com."
 requiredRole: "public"
 requiredAccess: "microsoft-example"
 layout: "microsoft-example"

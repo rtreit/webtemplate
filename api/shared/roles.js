@@ -2,7 +2,7 @@ const { BlobServiceClient } = require("@azure/storage-blob");
 
 const CONTAINER = "site-config";
 const BLOB_NAME = "roles.json";
-const DEFAULT_MICROSOFT_EXAMPLE_DOMAIN = "microsoft.com";
+const DEFAULT_MICROSOFT_EXAMPLE_DOMAINS = ["microsoft.com", "ntdev.microsoft.com"];
 
 function getDefaultConfig() {
     const bootstrapAdmin = String(process.env.BOOTSTRAP_ADMIN_EMAIL || "admin@example.com").trim().toLowerCase();
@@ -55,7 +55,7 @@ function parseAllowedDomains(value) {
 
     return normalizedDomains.length
         ? Array.from(new Set(normalizedDomains))
-        : [DEFAULT_MICROSOFT_EXAMPLE_DOMAIN];
+        : DEFAULT_MICROSOFT_EXAMPLE_DOMAINS.slice();
 }
 
 function getMicrosoftExampleAllowedDomains() {
@@ -210,5 +210,5 @@ module.exports = {
     saveRolesConfig,
     resolveRole,
     getDefaultConfig,
-    DEFAULT_MICROSOFT_EXAMPLE_DOMAIN,
+    DEFAULT_MICROSOFT_EXAMPLE_DOMAINS,
 };
