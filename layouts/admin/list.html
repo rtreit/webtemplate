@@ -1,0 +1,124 @@
+{{ define "main" }}
+<div class="admin-panel">
+    <header class="admin-header">
+        <h1>Admin Panel</h1>
+        <p class="admin-subtitle">Manage role assignments stored in Azure Blob Storage.</p>
+    </header>
+
+    <div id="admin-auth-gate">
+        <div class="admin-loading" id="admin-loading">Checking permissions...</div>
+        <div class="admin-denied" id="admin-denied" style="display:none;">
+            <h2>Access Denied</h2>
+            <p id="admin-denied-msg">You need admin permissions to view this page.</p>
+            <a href="/.auth/login/aad?post_login_redirect_uri=/admin/" class="btn-outline">Login</a>
+        </div>
+    </div>
+
+    <div id="admin-content" style="display:none;">
+        <section class="admin-section">
+            <div class="admin-section-header">
+                <h2>Role Configuration</h2>
+                <button class="admin-btn admin-btn-save" id="save-roles-btn">Save Changes</button>
+            </div>
+            <div class="admin-card">
+                <p class="post-card-excerpt">Edit the JSON role map, then save. The current signed-in admin must remain in the `admin` list.</p>
+                <textarea id="roles-json" class="admin-input" style="min-height: 24rem; font-family: var(--font-mono); width: 100%;"></textarea>
+            </div>
+            <div class="admin-status" id="admin-status"></div>
+        </section>
+    </div>
+</div>
+
+<script>
+(function() {
+    const loading = document.getElementById('admin-loading');
+    const denied = document.getElementById('admin-denied');
+    const deniedMsg = document.getElementById('admin-denied-msg');
+    const content = document.getElementById('admin-content');
+    const textarea = document.getElementById('roles-json');
+    const saveBtn = document.getElementById('save-roles-btn');
+    const status = document.getElementById('admin-status');
+
+    fetch('/api/check-role', { credentials: 'include' })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            loading.style.display = 'none';
+            if (!data.authenticated) {
+                denied.style.display = '';
+                deniedMsg.textContent = 'Please log in to access the admin panel.';
+                return;
+            }
+            if (!data.isAdmin) {
+                denied.style.display = '';
+                deniedMsg.textContent = 'Signed in as ' + data.email + ', but admin access is required.';
+                return;
+            }
+
+            content.style.display = '';
+            loadRoles();
+        })
+        .catch(function() {
+            loading.style.display = 'none';
+            denied.style.display = '';
+            deniedMsg.textContent = 'Unable to verify your permissions.';
+        });
+
+    function loadRoles() {
+        fetch('/api/manage-roles', { credentials: 'include' })
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Failed to load roles.');
+                }
+                return response.json();
+            })
+            .then(function(config) {
+                textarea.value = JSON.stringify(config, null, 2);
+            })
+            .catch(function(err) {
+                showStatus(err.message, 'error');
+            });
+    }
+
+    saveBtn.addEventListener('click', function() {
+        let payload;
+        try {
+            payload = JSON.parse(textarea.value);
+        } catch (err) {
+            showStatus('Invalid JSON: ' + err.message, 'error');
+            return;
+        }
+
+        saveBtn.disabled = true;
+        fetch('/api/manage-roles', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        })
+            .then(function(response) {
+                return response.json().then(function(body) {
+                    if (!response.ok) {
+                        throw new Error(body.error || 'Save failed.');
+                    }
+                    return body;
+                });
+            })
+            .then(function(body) {
+                textarea.value = JSON.stringify(body.config, null, 2);
+                showStatus('Roles saved successfully.', 'success');
+            })
+            .catch(function(err) {
+                showStatus(err.message, 'error');
+            })
+            .finally(function() {
+                saveBtn.disabled = false;
+            });
+    });
+
+    function showStatus(message, kind) {
+        status.textContent = message;
+        status.className = 'admin-status admin-status-' + kind;
+    }
+})();
+</script>
+{{ end }}

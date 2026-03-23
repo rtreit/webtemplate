@@ -1,0 +1,25 @@
+# Hugo
+public/
+resources/_gen/
+.hugo_build.lock
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.envrc
+local.settings.json
+local.settings.*.json
+
+# Logs
+*.log
+
+# Node (if ever used for tooling)
+node_modules/
+
+# Editor
+*.swp
+*.swo
+*~

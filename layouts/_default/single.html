@@ -1,0 +1,16 @@
+{{ define "main" }}
+<article class="post">
+    <header class="post-header">
+        <h1>{{ .Title }}</h1>
+        {{ with .Description }}
+        <p class="post-card-excerpt">{{ . }}</p>
+        {{ end }}
+        {{ with .Params.requiredRole }}
+        <p class="legacy-origin">Visibility: {{ . | title }}</p>
+        {{ end }}
+    </header>
+    <div class="post-content">
+        {{ .Content }}
+    </div>
+</article>
+{{ end }}

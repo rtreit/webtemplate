@@ -1,0 +1,21 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/.auth/*", "/images/*", "/api/*", "/css/*", "/js/*", "*.xml", "*.json"]
+  },
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/404.html"
+    }
+  },
+  "globalHeaders": {
+    "X-Frame-Options": "SAMEORIGIN",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Cache-Control": "no-cache"
+  },
+  "mimeTypes": {
+    ".json": "application/json",
+    ".xml": "application/xml"
+  }
+}

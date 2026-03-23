@@ -1,0 +1,28 @@
+{{ define "main" }}
+<div class="blog-list">
+    <h1 class="page-title">{{ .Title }}</h1>
+    {{ with .Description }}
+    <p class="post-card-excerpt">{{ . }}</p>
+    {{ end }}
+    {{ with .Content }}
+    <div class="post-content">
+        {{ . }}
+    </div>
+    {{ end }}
+
+    {{ if .Pages }}
+    <div class="post-grid">
+        {{ range .Pages }}
+        <article class="post-card">
+            <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+            {{ with .Description }}
+            <p class="post-card-excerpt">{{ . }}</p>
+            {{ else }}
+            <p class="post-card-excerpt">{{ .Summary | plainify | truncate 180 }}</p>
+            {{ end }}
+        </article>
+        {{ end }}
+    </div>
+    {{ end }}
+</div>
+{{ end }}

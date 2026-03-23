@@ -1,0 +1,31 @@
+<nav class="site-nav">
+    <div class="nav-inner">
+        <a href="/" class="nav-brand">{{ .Site.Title }}</a>
+        <div class="nav-right">
+            <ul class="nav-links">
+                {{ range .Site.Menus.main }}
+                <li>
+                    <a href="{{ .URL }}"{{ if eq $.RelPermalink .URL }} class="active"{{ end }}>{{ .Name }}</a>
+                </li>
+                {{ end }}
+            </ul>
+            <a id="auth-login-link" class="auth-link auth-link-login" href="/.auth/login/aad?post_login_redirect_uri=/" title="Sign in with Microsoft">
+                Login
+            </a>
+            <a id="auth-logout-link" class="auth-link auth-link-logout is-hidden" href="/.auth/logout?post_logout_redirect_uri=/" title="Sign out">
+                Logout
+            </a>
+            <a id="member-zone-link" class="auth-link auth-link-member is-hidden" href="/members/" title="Open the member example page">
+                Member Area
+            </a>
+            <a id="admin-link" class="auth-link auth-link-admin is-hidden" href="/admin/" title="Open the admin panel">
+                Admin
+            </a>
+            <span id="auth-user-display" class="auth-user is-hidden" aria-live="polite"></span>
+            <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle color theme">
+                dark
+            </button>
+            <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">&#9776;</button>
+        </div>
+    </div>
+</nav>

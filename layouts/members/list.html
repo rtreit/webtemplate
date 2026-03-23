@@ -1,0 +1,61 @@
+{{ define "main" }}
+<section class="member-page">
+    <h1>{{ .Title }}</h1>
+    <p>{{ .Description }}</p>
+
+    <div class="member-access-status" id="member-access-status">
+        <h2>Permission check</h2>
+        <p>
+            <span id="member-access-badge" class="member-access-badge is-denied">Checking</span>
+        </p>
+        <p id="member-access-message">Verifying your sign-in and role membership.</p>
+        <div class="member-actions">
+            <a class="auth-link auth-link-login" href="/.auth/login/aad?post_login_redirect_uri=/members/" title="Sign in with Microsoft">Login</a>
+            <a class="auth-link auth-link-logout" href="/.auth/logout?post_logout_redirect_uri=/members/" title="Sign out">Logout</a>
+        </div>
+    </div>
+</section>
+
+<script>
+(function() {
+    const badge = document.getElementById('member-access-badge');
+    const message = document.getElementById('member-access-message');
+
+    function setState(allowed, text) {
+        badge.classList.toggle('is-allowed', allowed);
+        badge.classList.toggle('is-denied', !allowed);
+        badge.textContent = allowed ? 'Allowed' : 'Denied';
+        message.textContent = text;
+    }
+
+    fetch('/api/role-access?role=member', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        credentials: 'include',
+    })
+        .then(function(response) {
+            return response.json().catch(function() {
+                return { authorized: false, message: 'Unexpected response.' };
+            }).then(function(payload) {
+                return { response: response, payload: payload };
+            });
+        })
+        .then(function(result) {
+            if (result.response.ok && result.payload.authorized) {
+                setState(true, 'Access granted for ' + result.payload.user + ' with role ' + result.payload.role + '.');
+                return;
+            }
+
+            if (!result.payload.authenticated) {
+                setState(false, 'You are not signed in. Use Login to authenticate.');
+                return;
+            }
+
+            setState(false, 'Signed in as ' + result.payload.user + ', but this page requires the member role.');
+        })
+        .catch(function() {
+            setState(false, 'Permission check failed. Try refreshing after signing in.');
+        });
+})();
+</script>
+{{ end }}

@@ -1,0 +1,30 @@
+{{ define "main" }}
+<div class="hero">
+    <h1>{{ .Site.Title }}</h1>
+    <p class="hero-tagline">{{ .Site.Params.tagline }}</p>
+    <div class="hero-links">
+        <a href="/projects/" class="btn-primary">Browse Example Projects</a>
+        <a href="/about/" class="btn-outline">Read the Starter Guide</a>
+    </div>
+</div>
+
+<section>
+    <div class="section-header">
+        <h2>What this starter demonstrates</h2>
+    </div>
+    <div class="post-grid">
+        <article class="post-card">
+            <h3>EasyAuth login flow</h3>
+            <p class="post-card-excerpt">Login and logout are handled by Azure Static Web Apps. The browser checks auth state through `/.auth/me`.</p>
+        </article>
+        <article class="post-card">
+            <h3>Role-aware UI</h3>
+            <p class="post-card-excerpt">Navigation and example project cards react to the current role returned by `/api/check-role`.</p>
+        </article>
+        <article class="post-card">
+            <h3>Backend authorization</h3>
+            <p class="post-card-excerpt">Azure Functions read `x-ms-client-principal`, resolve roles from blob storage, and enforce access for privileged paths.</p>
+        </article>
+    </div>
+</section>
+{{ end }}

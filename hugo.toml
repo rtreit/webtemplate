@@ -1,0 +1,27 @@
+baseURL = "https://example.com/"
+languageCode = "en-us"
+title = "Web Template"
+
+[params]
+  description = "Starter Hugo site with Azure Static Web Apps EasyAuth and role-based feature examples."
+  author = "Your Team"
+  tagline = "A starter kit for auth-aware static apps"
+  github = "https://github.com/your-org/webtemplate"
+  email = "hello@example.com"
+
+[menu]
+  [[menu.main]]
+    name = "Home"
+    url = "/"
+    weight = 1
+  [[menu.main]]
+    name = "Projects"
+    url = "/projects/"
+    weight = 2
+  [[menu.main]]
+    name = "About"
+    url = "/about/"
+    weight = 3
+
+[outputs]
+  home = ["HTML"]
