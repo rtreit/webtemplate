@@ -14,7 +14,8 @@
         {{ range .Pages }}
         {{ $requiredRole := .Params.requiredRole | default "public" }}
         {{ $requiredDomain := .Params.requiredDomain | default "" }}
-        <article class="project-card{{ if or (ne $requiredRole "public") $requiredDomain }} is-hidden{{ end }}" data-required-role="{{ $requiredRole }}"{{ with $requiredDomain }} data-required-domain="{{ . }}"{{ end }}>
+        {{ $requiredAccess := .Params.requiredAccess | default "" }}
+        <article class="project-card{{ if or (ne $requiredRole "public") $requiredDomain $requiredAccess }} is-hidden{{ end }}" data-required-role="{{ $requiredRole }}"{{ with $requiredDomain }} data-required-domain="{{ . }}"{{ end }}{{ with $requiredAccess }} data-required-access="{{ . }}"{{ end }}>
             <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
             {{ with .Description }}
             <p>{{ . }}</p>
@@ -23,9 +24,12 @@
             {{ end }}
             <div class="project-card-links">
                 {{ with $requiredDomain }}
-                <span class="post-tag">Domain: @{{ . }}</span>
+                <span class="post-tag">Domain: {{ . }} and subdomains</span>
                 {{ end }}
-                <span class="post-tag">{{ if ne $requiredRole "public" }}Role: {{ $requiredRole | title }}{{ else if $requiredDomain }}Sign-in required{{ else }}Access: Public{{ end }}</span>
+                {{ with $requiredAccess }}
+                <span class="post-tag">{{ if eq . "microsoft-example" }}Tenant: Allowed tenant only{{ else }}Access flag: {{ . }}{{ end }}</span>
+                {{ end }}
+                <span class="post-tag">{{ if ne $requiredRole "public" }}Role: {{ $requiredRole | title }}{{ else if or $requiredDomain $requiredAccess }}Sign-in required{{ else }}Access: Public{{ end }}</span>
             </div>
         </article>
         {{ end }}

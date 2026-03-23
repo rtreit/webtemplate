@@ -1,8 +1,9 @@
-const { parsePrincipal, getEmail, getEmailDomain, hasEmailDomain, loadRolesConfig, resolveRole } = require("../shared/roles");
+const { parsePrincipal, getEmail, getEmailDomain, getMicrosoftExampleAccess, loadRolesConfig, resolveRole } = require("../shared/roles");
 
 module.exports = async function (context, req) {
     const principal = parsePrincipal(req);
     const email = getEmail(principal);
+    const microsoftExampleAccess = getMicrosoftExampleAccess(principal);
 
     if (!principal || !email) {
         context.res = {
@@ -13,8 +14,10 @@ module.exports = async function (context, req) {
                 role: "anonymous",
                 email: null,
                 emailDomain: null,
+                tenantId: microsoftExampleAccess.tenantId,
                 isAdmin: false,
                 hasMicrosoftExampleAccess: false,
+                microsoftExample: microsoftExampleAccess,
             },
         };
         return;
@@ -32,8 +35,10 @@ module.exports = async function (context, req) {
             role,
             email,
             emailDomain,
+            tenantId: microsoftExampleAccess.tenantId,
             isAdmin: role === "admin",
-            hasMicrosoftExampleAccess: hasEmailDomain(email, "microsoft.com"),
+            hasMicrosoftExampleAccess: microsoftExampleAccess.authorized,
+            microsoftExample: microsoftExampleAccess,
         },
     };
 };

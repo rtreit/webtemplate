@@ -11,7 +11,7 @@ Starter Hugo site for Azure Static Web Apps with Microsoft EasyAuth, role-aware 
 - Role storage in Azure Blob Storage at `site-config/roles.json`
 - Admin page for managing roles
 - Example public, member-only, and admin-only project cards
-- A microsoft.com-only starter example backed by an Azure Function
+- A tenant-gated Microsoft example backed by an Azure Function
 
 ## What this template does not include
 
@@ -59,7 +59,7 @@ Login and logout are handled by Azure Static Web Apps EasyAuth:
 
 The browser checks auth state and updates the UI. Azure Functions enforce authorization using the `x-ms-client-principal` header injected by Static Web Apps after sign-in.
 
-This starter also includes a domain-based example at `/microsoft-example/`. Its protected payload comes from `/api/microsoft-example`, which only returns data to signed-in `@microsoft.com` users.
+This starter also includes a tenant-based example at `/microsoft-example/`. Its protected payload comes from `/api/microsoft-example`, which only returns data to signed-in users whose tenant ID claim equals `72f988bf-86f1-41af-91ab-2d7cd011db47`.
 
 ## Role bootstrap
 
@@ -73,7 +73,7 @@ After signing in as the bootstrap admin, open `/admin/` to manage roles.
 
 ## Real security note
 
-This starter can hide or reveal UI based on auth state, but static HTML pages are still public files once deployed. The microsoft.com project card and navigation link are hidden in the browser for other users, but the actual example data is protected by `/api/microsoft-example`. Use Azure Functions or other backend APIs for truly sensitive data or privileged operations.
+This starter can hide or reveal UI based on auth state, but static HTML pages are still public files once deployed. The Microsoft tenant project card and navigation link are hidden in the browser for other users, but the actual example data is protected by `/api/microsoft-example`. Use Azure Functions or other backend APIs for truly sensitive data or privileged operations.
 
 ## Deployment
 

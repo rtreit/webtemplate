@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const root = document.documentElement;
     const themeStorageKey = 'theme-preference';
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-    const microsoftExampleDomain = 'microsoft.com';
 
     if (navToggle && links) {
         navToggle.addEventListener('click', function() {
@@ -59,11 +58,26 @@ document.addEventListener('DOMContentLoaded', function() {
         return roleData.authenticated && normalizeDomain(roleData.emailDomain) === normalizeDomain(requiredDomain);
     }
 
+    function hasRequiredAccess(roleData, requiredAccess) {
+        if (!requiredAccess) {
+            return true;
+        }
+
+        if (requiredAccess === 'microsoft-example') {
+            return roleData.authenticated && !!roleData.hasMicrosoftExampleAccess;
+        }
+
+        return false;
+    }
+
     function applyProjectAccess(roleData) {
         document.querySelectorAll('[data-required-role]').forEach(function(card) {
             const requiredRole = String(card.dataset.requiredRole || 'public').trim().toLowerCase();
             const requiredDomain = normalizeDomain(card.dataset.requiredDomain);
-            const allowed = hasRequiredRole(roleData, requiredRole) && hasRequiredDomain(roleData, requiredDomain);
+            const requiredAccess = String(card.dataset.requiredAccess || '').trim().toLowerCase();
+            const allowed = hasRequiredRole(roleData, requiredRole)
+                && hasRequiredDomain(roleData, requiredDomain)
+                && hasRequiredAccess(roleData, requiredAccess);
             card.classList.toggle('is-hidden', !allowed);
         });
     }
@@ -78,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleHidden(microsoftExampleLink, true);
         toggleHidden(adminLink, true);
         toggleHidden(authUserDisplay, true);
-        applyProjectAccess({ authenticated: false, role: 'anonymous', emailDomain: null, isAdmin: false });
+        applyProjectAccess({ authenticated: false, role: 'anonymous', emailDomain: null, isAdmin: false, hasMicrosoftExampleAccess: false });
     }
 
     async function syncAuthUi() {
@@ -121,14 +135,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const roleResp = await fetch('/api/check-role', { credentials: 'include' });
                 const roleData = await roleResp.json();
                 toggleHidden(memberZoneLink, !(roleData.authenticated && (roleData.role === 'member' || roleData.isAdmin)));
-                toggleHidden(microsoftExampleLink, !roleData.hasMicrosoftExampleAccess && !(roleData.authenticated && normalizeDomain(roleData.emailDomain) === microsoftExampleDomain));
+                toggleHidden(microsoftExampleLink, !roleData.hasMicrosoftExampleAccess);
                 toggleHidden(adminLink, !roleData.isAdmin);
                 applyProjectAccess(roleData);
             } catch {
                 toggleHidden(memberZoneLink, true);
                 toggleHidden(microsoftExampleLink, true);
                 toggleHidden(adminLink, true);
-                applyProjectAccess({ authenticated: true, role: 'visitor', emailDomain: null, isAdmin: false });
+                applyProjectAccess({ authenticated: true, role: 'visitor', emailDomain: null, isAdmin: false, hasMicrosoftExampleAccess: false });
             }
         } catch (err) {
             renderLoggedOutState();
