@@ -821,6 +821,43 @@ img {
     flex-wrap: wrap;
 }
 
+.domain-example-panel {
+    margin-top: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+}
+
+.domain-example-panel h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.domain-example-panel p {
+    margin-bottom: 0.75rem;
+}
+
+.domain-example-list {
+    list-style: none;
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.domain-example-list li {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-tertiary);
+    padding: 0.9rem 1rem;
+    color: var(--text-secondary);
+}
+
+.domain-example-list strong {
+    color: var(--text-primary);
+}
+
 /* ===== Footer ===== */
 .site-footer {
     border-top: 1px solid var(--border);

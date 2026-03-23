@@ -31,6 +31,23 @@ function getEmail(principal) {
     return String(principal.userDetails).trim().toLowerCase();
 }
 
+function getEmailDomain(email) {
+    if (!email) return null;
+    const normalized = String(email).trim().toLowerCase();
+    const atIndex = normalized.lastIndexOf("@");
+    if (atIndex < 0 || atIndex === normalized.length - 1) {
+        return null;
+    }
+
+    return normalized.slice(atIndex + 1);
+}
+
+function hasEmailDomain(email, requiredDomain) {
+    const normalizedDomain = String(requiredDomain || "").trim().toLowerCase();
+    if (!normalizedDomain) return false;
+    return getEmailDomain(email) === normalizedDomain;
+}
+
 async function loadRolesConfig() {
     const connectionString = process.env.STORAGE_CONNECTION_STRING;
     const defaultConfig = getDefaultConfig();
@@ -97,6 +114,8 @@ function resolveRole(config, email) {
 module.exports = {
     parsePrincipal,
     getEmail,
+    getEmailDomain,
+    hasEmailDomain,
     loadRolesConfig,
     saveRolesConfig,
     resolveRole,

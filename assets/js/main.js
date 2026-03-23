@@ -4,12 +4,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const authLoginLink = document.getElementById('auth-login-link');
     const authLogoutLink = document.getElementById('auth-logout-link');
     const memberZoneLink = document.getElementById('member-zone-link');
+    const microsoftExampleLink = document.getElementById('microsoft-example-link');
     const adminLink = document.getElementById('admin-link');
     const authUserDisplay = document.getElementById('auth-user-display');
     const themeToggle = document.getElementById('theme-toggle');
     const root = document.documentElement;
     const themeStorageKey = 'theme-preference';
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    const microsoftExampleDomain = 'microsoft.com';
 
     if (navToggle && links) {
         navToggle.addEventListener('click', function() {
@@ -39,12 +41,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function normalizeDomain(domain) {
+        return String(domain || '').trim().toLowerCase();
+    }
+
+    function hasRequiredRole(roleData, requiredRole) {
+        return requiredRole === 'public'
+            || (roleData.authenticated && roleData.isAdmin)
+            || (roleData.authenticated && roleData.role === requiredRole);
+    }
+
+    function hasRequiredDomain(roleData, requiredDomain) {
+        if (!requiredDomain) {
+            return true;
+        }
+
+        return roleData.authenticated && normalizeDomain(roleData.emailDomain) === normalizeDomain(requiredDomain);
+    }
+
     function applyProjectAccess(roleData) {
         document.querySelectorAll('[data-required-role]').forEach(function(card) {
             const requiredRole = String(card.dataset.requiredRole || 'public').trim().toLowerCase();
-            const allowed = requiredRole === 'public'
-                || (roleData.authenticated && roleData.isAdmin)
-                || (roleData.authenticated && roleData.role === requiredRole);
+            const requiredDomain = normalizeDomain(card.dataset.requiredDomain);
+            const allowed = hasRequiredRole(roleData, requiredRole) && hasRequiredDomain(roleData, requiredDomain);
             card.classList.toggle('is-hidden', !allowed);
         });
     }
@@ -56,9 +75,10 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleHidden(authLoginLink, false);
         toggleHidden(authLogoutLink, true);
         toggleHidden(memberZoneLink, true);
+        toggleHidden(microsoftExampleLink, true);
         toggleHidden(adminLink, true);
         toggleHidden(authUserDisplay, true);
-        applyProjectAccess({ authenticated: false, role: 'anonymous', isAdmin: false });
+        applyProjectAccess({ authenticated: false, role: 'anonymous', emailDomain: null, isAdmin: false });
     }
 
     async function syncAuthUi() {
@@ -101,12 +121,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const roleResp = await fetch('/api/check-role', { credentials: 'include' });
                 const roleData = await roleResp.json();
                 toggleHidden(memberZoneLink, !(roleData.authenticated && (roleData.role === 'member' || roleData.isAdmin)));
+                toggleHidden(microsoftExampleLink, !roleData.hasMicrosoftExampleAccess && !(roleData.authenticated && normalizeDomain(roleData.emailDomain) === microsoftExampleDomain));
                 toggleHidden(adminLink, !roleData.isAdmin);
                 applyProjectAccess(roleData);
             } catch {
                 toggleHidden(memberZoneLink, true);
+                toggleHidden(microsoftExampleLink, true);
                 toggleHidden(adminLink, true);
-                applyProjectAccess({ authenticated: true, role: 'visitor', isAdmin: false });
+                applyProjectAccess({ authenticated: true, role: 'visitor', emailDomain: null, isAdmin: false });
             }
         } catch (err) {
             renderLoggedOutState();

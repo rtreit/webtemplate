@@ -13,7 +13,8 @@
     <div class="projects-grid">
         {{ range .Pages }}
         {{ $requiredRole := .Params.requiredRole | default "public" }}
-        <article class="project-card{{ if ne $requiredRole "public" }} is-hidden{{ end }}" data-required-role="{{ $requiredRole }}">
+        {{ $requiredDomain := .Params.requiredDomain | default "" }}
+        <article class="project-card{{ if or (ne $requiredRole "public") $requiredDomain }} is-hidden{{ end }}" data-required-role="{{ $requiredRole }}"{{ with $requiredDomain }} data-required-domain="{{ . }}"{{ end }}>
             <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
             {{ with .Description }}
             <p>{{ . }}</p>
@@ -21,7 +22,10 @@
             <p>{{ .Summary | plainify | truncate 200 }}</p>
             {{ end }}
             <div class="project-card-links">
-                <span class="post-tag">Access: {{ $requiredRole | title }}</span>
+                {{ with $requiredDomain }}
+                <span class="post-tag">Domain: @{{ . }}</span>
+                {{ end }}
+                <span class="post-tag">{{ if ne $requiredRole "public" }}Role: {{ $requiredRole | title }}{{ else if $requiredDomain }}Sign-in required{{ else }}Access: Public{{ end }}</span>
             </div>
         </article>
         {{ end }}

@@ -1,0 +1,89 @@
+{{ define "main" }}
+<section class="member-page">
+    <h1>{{ .Title }}</h1>
+    <p>{{ .Description }}</p>
+    <p>This example keeps the page shell generic, but the featured content below only comes from the backend after a signed-in user's email domain is verified against <code>@microsoft.com</code>.</p>
+
+    <div class="member-access-status" id="microsoft-example-status">
+        <h2>Domain permission check</h2>
+        <p>
+            <span id="microsoft-example-badge" class="member-access-badge is-denied">Checking</span>
+        </p>
+        <p id="microsoft-example-message">Verifying your sign-in and email domain.</p>
+        <div class="member-actions">
+            <a class="auth-link auth-link-login" href="/.auth/login/aad?post_login_redirect_uri=/microsoft-example/" title="Sign in with Microsoft">Login</a>
+            <a class="auth-link auth-link-logout" href="/.auth/logout?post_logout_redirect_uri=/microsoft-example/" title="Sign out">Logout</a>
+        </div>
+    </div>
+
+    <section class="domain-example-panel is-hidden" id="microsoft-example-panel" aria-live="polite">
+        <h2 id="microsoft-example-panel-title">Protected example payload</h2>
+        <p id="microsoft-example-panel-summary"></p>
+        <ul class="domain-example-list" id="microsoft-example-highlights"></ul>
+    </section>
+</section>
+
+<script>
+(function() {
+    const badge = document.getElementById('microsoft-example-badge');
+    const message = document.getElementById('microsoft-example-message');
+    const panel = document.getElementById('microsoft-example-panel');
+    const panelTitle = document.getElementById('microsoft-example-panel-title');
+    const panelSummary = document.getElementById('microsoft-example-panel-summary');
+    const highlights = document.getElementById('microsoft-example-highlights');
+
+    function setState(allowed, text) {
+        badge.classList.toggle('is-allowed', allowed);
+        badge.classList.toggle('is-denied', !allowed);
+        badge.textContent = allowed ? 'Allowed' : 'Denied';
+        message.textContent = text;
+        panel.classList.toggle('is-hidden', !allowed);
+    }
+
+    function renderHighlights(items) {
+        highlights.innerHTML = '';
+        items.forEach(function(item) {
+            const entry = document.createElement('li');
+            const heading = document.createElement('strong');
+            heading.textContent = item.heading;
+            entry.appendChild(heading);
+            entry.appendChild(document.createElement('br'));
+            entry.appendChild(document.createTextNode(item.detail));
+            highlights.appendChild(entry);
+        });
+    }
+
+    fetch('/api/microsoft-example', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        credentials: 'include',
+    })
+        .then(function(response) {
+            return response.json().catch(function() {
+                return { authorized: false, message: 'Unexpected response.' };
+            }).then(function(payload) {
+                return { response: response, payload: payload };
+            });
+        })
+        .then(function(result) {
+            if (result.response.ok && result.payload.authorized) {
+                panelTitle.textContent = result.payload.title;
+                panelSummary.textContent = result.payload.summary;
+                renderHighlights(result.payload.highlights || []);
+                setState(true, 'Access granted for ' + result.payload.user + ' with domain @' + result.payload.requiredDomain + '.');
+                return;
+            }
+
+            if (!result.payload.authenticated) {
+                setState(false, 'You are not signed in. Use Login to authenticate and test the microsoft.com-only example.');
+                return;
+            }
+
+            setState(false, result.payload.message || 'You are signed in, but this example is limited to @microsoft.com users.');
+        })
+        .catch(function() {
+            setState(false, 'Permission check failed. Try refreshing after signing in.');
+        });
+})();
+</script>
+{{ end }}
