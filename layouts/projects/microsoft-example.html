@@ -2,14 +2,14 @@
 <section class="member-page">
     <h1>{{ .Title }}</h1>
     <p>{{ .Description }}</p>
-    <p>This example keeps the page shell generic, but the featured content below only comes from the backend after a signed-in user's <code>x-ms-client-principal</code> claims show tenant ID <code>72f988bf-86f1-41af-91ab-2d7cd011db47</code>.</p>
+    <p>This example keeps the page shell generic, but the featured content below only comes from the backend after Azure Functions verify the signed-in user's <code>x-ms-client-principal.userDetails</code> email domain.</p>
 
     <div class="member-access-status" id="microsoft-example-status">
-        <h2>Tenant permission check</h2>
+        <h2>Authorized-domain permission check</h2>
         <p>
             <span id="microsoft-example-badge" class="member-access-badge is-denied">Checking</span>
         </p>
-        <p id="microsoft-example-message">Verifying your sign-in and tenant claim.</p>
+        <p id="microsoft-example-message">Verifying your sign-in and authorized email domain.</p>
         <div class="member-actions">
             <a class="auth-link auth-link-login" href="/.auth/login/aad?post_login_redirect_uri=/microsoft-example/" title="Sign in with Microsoft">Login</a>
             <a class="auth-link auth-link-logout" href="/.auth/logout?post_logout_redirect_uri=/microsoft-example/" title="Sign out">Logout</a>
@@ -70,16 +70,16 @@
                 panelTitle.textContent = result.payload.title;
                 panelSummary.textContent = result.payload.summary;
                 renderHighlights(result.payload.highlights || []);
-                setState(true, result.payload.message || ('Access granted for ' + result.payload.user + ' because tenant ' + result.payload.tenantId + ' matches the allowed tenant.'));
+                setState(true, result.payload.message || 'Access granted.');
                 return;
             }
 
             if (!result.payload.authenticated) {
-                setState(false, result.payload.message || 'You are not signed in. Use Login to authenticate and test the tenant-restricted example.');
+                setState(false, result.payload.message || 'You are not signed in. Use Login to authenticate and test the authorized-domain example.');
                 return;
             }
 
-            setState(false, result.payload.message || 'You are signed in, but this example requires tenant ID claim 72f988bf-86f1-41af-91ab-2d7cd011db47.');
+            setState(false, result.payload.message || result.payload.accessRule || 'You are signed in, but this example requires an authorized email domain.');
         })
         .catch(function() {
             setState(false, 'Permission check failed. Try refreshing after signing in.');

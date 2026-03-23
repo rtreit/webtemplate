@@ -27,7 +27,7 @@
                 <span class="post-tag">Domain: {{ . }} and subdomains</span>
                 {{ end }}
                 {{ with $requiredAccess }}
-                <span class="post-tag">{{ if eq . "microsoft-example" }}Tenant: Allowed tenant only{{ else }}Access flag: {{ . }}{{ end }}</span>
+                <span class="post-tag">{{ if eq . "microsoft-example" }}Authorized domain only{{ else }}Access flag: {{ . }}{{ end }}</span>
                 {{ end }}
                 <span class="post-tag">{{ if ne $requiredRole "public" }}Role: {{ $requiredRole | title }}{{ else if or $requiredDomain $requiredAccess }}Sign-in required{{ else }}Access: Public{{ end }}</span>
             </div>

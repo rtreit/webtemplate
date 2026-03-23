@@ -18,8 +18,8 @@ module.exports = async function (context, req) {
         headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
         body: {
             ...access,
-            title: "Microsoft tenant starter example",
-            summary: "This payload is only returned after Azure Functions verify that the signed-in x-ms-client-principal includes tenant ID claim " + access.requiredTenantId + ".",
+            title: "Microsoft authorized-domain starter example",
+            summary: "This payload is only returned after Azure Functions verify that the signed-in user's x-ms-client-principal email domain matches an authorized domain.",
             highlights: [
                 {
                     heading: "Protected data path",
@@ -27,11 +27,11 @@ module.exports = async function (context, req) {
                 },
                 {
                     heading: "Shared auth helpers",
-                    detail: "The Function reuses shared helpers that parse x-ms-client-principal claims and compare the tenant ID in api/shared/roles.js.",
+                    detail: "The Function reuses shared helpers in api/shared/roles.js to read x-ms-client-principal, inspect userDetails, and match the email domain server-side.",
                 },
                 {
                     heading: "Starter-kit adaptation point",
-                    detail: "Swap the allowed tenant ID in api/shared/roles.js when tailoring this template for a different organization.",
+                    detail: "Set MICROSOFT_EXAMPLE_ALLOWED_DOMAINS to a comma-separated list of allowed base domains such as microsoft.com or subdomains you want to permit.",
                 },
             ],
         },

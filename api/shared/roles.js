@@ -2,12 +2,7 @@ const { BlobServiceClient } = require("@azure/storage-blob");
 
 const CONTAINER = "site-config";
 const BLOB_NAME = "roles.json";
-const MICROSOFT_EXAMPLE_TENANT_ID = "72f988bf-86f1-41af-91ab-2d7cd011db47";
-const TENANT_ID_CLAIM_TYPES = [
-    "tid",
-    "tenantid",
-    "http://schemas.microsoft.com/identity/claims/tenantid",
-];
+const DEFAULT_MICROSOFT_EXAMPLE_DOMAIN = "microsoft.com";
 
 function getDefaultConfig() {
     const bootstrapAdmin = String(process.env.BOOTSTRAP_ADMIN_EMAIL || "admin@example.com").trim().toLowerCase();
@@ -37,36 +32,6 @@ function getEmail(principal) {
     return String(principal.userDetails).trim().toLowerCase();
 }
 
-function getClaimValue(principal, claimTypes) {
-    if (!principal || !Array.isArray(principal.claims)) {
-        return null;
-    }
-
-    const normalizedClaimTypes = new Set(
-        (Array.isArray(claimTypes) ? claimTypes : [claimTypes])
-            .map((claimType) => String(claimType || "").trim().toLowerCase())
-            .filter(Boolean)
-    );
-
-    if (!normalizedClaimTypes.size) {
-        return null;
-    }
-
-    for (const claim of principal.claims) {
-        const claimType = String(claim && claim.typ || "").trim().toLowerCase();
-        if (!normalizedClaimTypes.has(claimType)) {
-            continue;
-        }
-
-        const value = String(claim && claim.val || "").trim();
-        if (value) {
-            return value;
-        }
-    }
-
-    return null;
-}
-
 function getEmailDomain(email) {
     if (!email) return null;
     const normalized = String(email).trim().toLowerCase();
@@ -78,6 +43,25 @@ function getEmailDomain(email) {
     return normalized.slice(atIndex + 1);
 }
 
+function normalizeDomain(domain) {
+    return String(domain || "").trim().toLowerCase();
+}
+
+function parseAllowedDomains(value) {
+    const normalizedDomains = String(value || "")
+        .split(/[,\s;]+/)
+        .map(normalizeDomain)
+        .filter(Boolean);
+
+    return normalizedDomains.length
+        ? Array.from(new Set(normalizedDomains))
+        : [DEFAULT_MICROSOFT_EXAMPLE_DOMAIN];
+}
+
+function getMicrosoftExampleAllowedDomains() {
+    return parseAllowedDomains(process.env.MICROSOFT_EXAMPLE_ALLOWED_DOMAINS);
+}
+
 function hasEmailDomain(email, requiredDomain) {
     const normalizedDomain = String(requiredDomain || "").trim().toLowerCase();
     if (!normalizedDomain) return false;
@@ -85,31 +69,20 @@ function hasEmailDomain(email, requiredDomain) {
 }
 
 function hasEmailDomainOrSubdomain(email, requiredDomain) {
-    const normalizedDomain = String(requiredDomain || "").trim().toLowerCase();
+    const normalizedDomain = normalizeDomain(requiredDomain);
     const emailDomain = getEmailDomain(email);
     if (!normalizedDomain || !emailDomain) return false;
     return emailDomain === normalizedDomain || emailDomain.endsWith("." + normalizedDomain);
 }
 
-function getTenantId(principal) {
-    const tenantId = getClaimValue(principal, TENANT_ID_CLAIM_TYPES);
-    return tenantId ? tenantId.toLowerCase() : null;
-}
-
-function hasTenantId(principal, requiredTenantId) {
-    const normalizedRequiredTenantId = String(requiredTenantId || "").trim().toLowerCase();
-    if (!normalizedRequiredTenantId) {
-        return false;
-    }
-
-    return getTenantId(principal) === normalizedRequiredTenantId;
-}
-
 function getMicrosoftExampleAccess(principal) {
     const email = getEmail(principal);
     const emailDomain = getEmailDomain(email);
-    const tenantId = getTenantId(principal);
-    const accessRule = "Authenticated users must have tenant ID claim " + MICROSOFT_EXAMPLE_TENANT_ID + ".";
+    const allowedDomains = getMicrosoftExampleAllowedDomains();
+    const matchedDomain = emailDomain
+        ? allowedDomains.find((domain) => hasEmailDomainOrSubdomain(email, domain)) || null
+        : null;
+    const accessRule = "Authenticated users must sign in with an email address in one of these domains: " + allowedDomains.join(", ") + ".";
 
     if (!principal || !email) {
         return {
@@ -117,36 +90,36 @@ function getMicrosoftExampleAccess(principal) {
             authenticated: false,
             user: null,
             emailDomain: null,
-            tenantId: null,
-            requiredTenantId: MICROSOFT_EXAMPLE_TENANT_ID,
+            allowedDomains,
+            matchedDomain: null,
             accessRule,
-            message: "Sign in with Microsoft to test the tenant-restricted example.",
+            message: "Sign in with Microsoft to test the authorized-domain example.",
         };
     }
 
-    if (!tenantId) {
+    if (!emailDomain) {
         return {
             authorized: false,
             authenticated: true,
             user: email,
             emailDomain,
-            tenantId: null,
-            requiredTenantId: MICROSOFT_EXAMPLE_TENANT_ID,
+            allowedDomains,
+            matchedDomain: null,
             accessRule,
-            message: "Signed in as " + email + ", but this example requires an Azure tenant ID claim.",
+            message: "Signed in as " + email + ", but this example requires a usable email domain in x-ms-client-principal.userDetails.",
         };
     }
 
-    if (!hasTenantId(principal, MICROSOFT_EXAMPLE_TENANT_ID)) {
+    if (!matchedDomain) {
         return {
             authorized: false,
             authenticated: true,
             user: email,
             emailDomain,
-            tenantId,
-            requiredTenantId: MICROSOFT_EXAMPLE_TENANT_ID,
+            allowedDomains,
+            matchedDomain: null,
             accessRule,
-            message: "Signed in as " + email + ", but this example is limited to tenant " + MICROSOFT_EXAMPLE_TENANT_ID + ".",
+            message: "Signed in as " + email + ", but this example is limited to authorized domains: " + allowedDomains.join(", ") + ".",
         };
     }
 
@@ -155,10 +128,10 @@ function getMicrosoftExampleAccess(principal) {
         authenticated: true,
         user: email,
         emailDomain,
-        tenantId,
-        requiredTenantId: MICROSOFT_EXAMPLE_TENANT_ID,
+        allowedDomains,
+        matchedDomain,
         accessRule,
-        message: "Access granted for " + email + " because tenant ID claim " + tenantId + " matches the allowed tenant.",
+        message: "Access granted for " + email + " because email domain " + emailDomain + " matches authorized domain " + matchedDomain + ".",
     };
 }
 
@@ -228,16 +201,14 @@ function resolveRole(config, email) {
 module.exports = {
     parsePrincipal,
     getEmail,
-    getClaimValue,
     getEmailDomain,
     hasEmailDomain,
     hasEmailDomainOrSubdomain,
-    getTenantId,
-    hasTenantId,
+    getMicrosoftExampleAllowedDomains,
     getMicrosoftExampleAccess,
     loadRolesConfig,
     saveRolesConfig,
     resolveRole,
     getDefaultConfig,
-    MICROSOFT_EXAMPLE_TENANT_ID,
+    DEFAULT_MICROSOFT_EXAMPLE_DOMAIN,
 };
