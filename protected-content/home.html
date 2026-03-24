@@ -1,0 +1,32 @@
+<div class="hero">
+    <h1>Web Template</h1>
+    <p class="hero-tagline">A starter kit for auth-aware static apps</p>
+    <div class="hero-links">
+        <a href="/projects/" class="btn-primary">Browse Example Projects</a>
+        <a href="/about/" class="btn-outline">Read the Starter Guide</a>
+    </div>
+</div>
+
+<section>
+    <div class="section-header">
+        <h2>What this starter demonstrates</h2>
+    </div>
+    <div class="post-grid">
+        <article class="post-card">
+            <h3>EasyAuth login flow</h3>
+            <p class="post-card-excerpt">Login and logout are handled by Azure Static Web Apps. The browser checks auth state through <code>/.auth/me</code>.</p>
+        </article>
+        <article class="post-card">
+            <h3>Role-aware UI</h3>
+            <p class="post-card-excerpt">Navigation and example project cards react to the current role returned by <code>/api/check-role</code>.</p>
+        </article>
+        <article class="post-card">
+            <h3>Backend authorization</h3>
+            <p class="post-card-excerpt">Azure Functions read <code>x-ms-client-principal</code>, resolve roles from blob storage, and enforce access for privileged paths.</p>
+        </article>
+        <article class="post-card">
+            <h3>Secure content delivery</h3>
+            <p class="post-card-excerpt">All restricted page content is served through authorized Azure Function endpoints from private blob storage. No sensitive content is baked into static HTML.</p>
+        </article>
+    </div>
+</section>

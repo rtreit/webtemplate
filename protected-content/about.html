@@ -1,0 +1,14 @@
+<h2>About this starter kit</h2>
+<p>This starter kit helps you stand up a Hugo site on Azure Static Web Apps with:</p>
+<ul>
+    <li>Microsoft login through EasyAuth</li>
+    <li>Azure Functions-based authorization checks</li>
+    <li>Domain-gated content served from private blob storage</li>
+    <li>Role-aware navigation and feature gating</li>
+    <li>A simple admin surface for role management</li>
+</ul>
+<p>Use it as a foundation for internal tools, partner portals, or authenticated web applications.</p>
+
+<h2>Security architecture</h2>
+<p>This page and all restricted content on this site are served through an authenticated Azure Function that reads <code>x-ms-client-principal</code> and verifies the signed-in user's email domain before returning any content. The static HTML you see in the browser is just a loading shell. The real content only arrives after server-side authorization passes.</p>
+<p>See the <a href="/auth-architecture/">Auth Architecture</a> page for a detailed walkthrough with diagrams.</p>

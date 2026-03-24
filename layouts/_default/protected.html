@@ -1,0 +1,71 @@
+{{ define "main" }}
+<article class="post">
+    <header class="post-header">
+        <h1>{{ .Title }}</h1>
+        {{ with .Description }}
+        <p class="post-card-excerpt">{{ . }}</p>
+        {{ end }}
+    </header>
+    <div class="post-content protected-content-shell" id="protected-content" data-slug="{{ .Params.contentSlug }}">
+        <div class="protected-loading" id="protected-loading">
+            <p>Loading authorized content...</p>
+        </div>
+        <div class="protected-denied is-hidden" id="protected-denied">
+            <p class="forbidden-code">403</p>
+            <h2>Access denied</h2>
+            <p id="protected-denied-message">Your account is not authorized to view this content.</p>
+            <p class="forbidden-rule">
+                Allowed domains: <code id="protected-denied-domains">microsoft.com, ntdev.microsoft.com</code>
+            </p>
+        </div>
+        <div class="protected-body is-hidden" id="protected-body"></div>
+    </div>
+</article>
+
+<script>
+(function() {
+    var container = document.getElementById('protected-content');
+    var loading = document.getElementById('protected-loading');
+    var denied = document.getElementById('protected-denied');
+    var deniedMessage = document.getElementById('protected-denied-message');
+    var deniedDomains = document.getElementById('protected-denied-domains');
+    var body = document.getElementById('protected-body');
+    var slug = container && container.dataset.slug;
+
+    if (!slug) {
+        loading.textContent = 'No content slug configured.';
+        return;
+    }
+
+    fetch('/api/protected-content/' + encodeURIComponent(slug), {
+        method: 'GET',
+        credentials: 'include',
+    })
+        .then(function(response) {
+            if (response.ok) {
+                return response.text().then(function(html) {
+                    body.innerHTML = html;
+                    loading.classList.add('is-hidden');
+                    body.classList.remove('is-hidden');
+                });
+            }
+
+            return response.json().catch(function() {
+                return { message: 'Access denied.', allowedDomains: [] };
+            }).then(function(data) {
+                if (deniedMessage && data.message) {
+                    deniedMessage.textContent = data.message;
+                }
+                if (deniedDomains && Array.isArray(data.allowedDomains) && data.allowedDomains.length) {
+                    deniedDomains.textContent = data.allowedDomains.join(', ');
+                }
+                loading.classList.add('is-hidden');
+                denied.classList.remove('is-hidden');
+            });
+        })
+        .catch(function() {
+            loading.textContent = 'Failed to load content. Try refreshing.';
+        });
+})();
+</script>
+{{ end }}

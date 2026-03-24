@@ -1,30 +1,51 @@
 {{ define "main" }}
-<div class="hero">
-    <h1>{{ .Site.Title }}</h1>
-    <p class="hero-tagline">{{ .Site.Params.tagline }}</p>
-    <div class="hero-links">
-        <a href="/projects/" class="btn-primary">Browse Example Projects</a>
-        <a href="/about/" class="btn-outline">Read the Starter Guide</a>
+<div id="protected-content" data-slug="home">
+    <div class="protected-loading" id="protected-loading">
+        <p>Loading authorized content...</p>
     </div>
+    <div class="protected-denied is-hidden" id="protected-denied">
+        <p class="forbidden-code">403</p>
+        <h2>Access denied</h2>
+        <p id="protected-denied-message">Your account is not authorized to view this content.</p>
+        <p class="forbidden-rule">
+            Allowed domains: <code id="protected-denied-domains">microsoft.com, ntdev.microsoft.com</code>
+        </p>
+    </div>
+    <div class="protected-body is-hidden" id="protected-body"></div>
 </div>
 
-<section>
-    <div class="section-header">
-        <h2>What this starter demonstrates</h2>
-    </div>
-    <div class="post-grid">
-        <article class="post-card">
-            <h3>EasyAuth login flow</h3>
-            <p class="post-card-excerpt">Login and logout are handled by Azure Static Web Apps. The browser checks auth state through `/.auth/me`.</p>
-        </article>
-        <article class="post-card">
-            <h3>Role-aware UI</h3>
-            <p class="post-card-excerpt">Navigation and example project cards react to the current role returned by `/api/check-role`.</p>
-        </article>
-        <article class="post-card">
-            <h3>Backend authorization</h3>
-            <p class="post-card-excerpt">Azure Functions read `x-ms-client-principal`, resolve roles from blob storage, and enforce access for privileged paths.</p>
-        </article>
-    </div>
-</section>
+<script>
+(function() {
+    var loading = document.getElementById('protected-loading');
+    var denied = document.getElementById('protected-denied');
+    var deniedMessage = document.getElementById('protected-denied-message');
+    var deniedDomains = document.getElementById('protected-denied-domains');
+    var body = document.getElementById('protected-body');
+
+    fetch('/api/protected-content/home', { method: 'GET', credentials: 'include' })
+        .then(function(response) {
+            if (response.ok) {
+                return response.text().then(function(html) {
+                    body.innerHTML = html;
+                    loading.classList.add('is-hidden');
+                    body.classList.remove('is-hidden');
+                });
+            }
+
+            return response.json().catch(function() {
+                return { message: 'Access denied.', allowedDomains: [] };
+            }).then(function(data) {
+                if (deniedMessage && data.message) { deniedMessage.textContent = data.message; }
+                if (deniedDomains && Array.isArray(data.allowedDomains) && data.allowedDomains.length) {
+                    deniedDomains.textContent = data.allowedDomains.join(', ');
+                }
+                loading.classList.add('is-hidden');
+                denied.classList.remove('is-hidden');
+            });
+        })
+        .catch(function() {
+            loading.textContent = 'Failed to load content. Try refreshing.';
+        });
+})();
+</script>
 {{ end }}
