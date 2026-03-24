@@ -19,9 +19,13 @@ title = "Web Template"
     url = "/projects/"
     weight = 2
   [[menu.main]]
+    name = "Awesome Report"
+    url = "/awesome-report/"
+    weight = 3
+  [[menu.main]]
     name = "About"
     url = "/about/"
-    weight = 3
+    weight = 4
 
 [outputs]
   home = ["HTML"]
