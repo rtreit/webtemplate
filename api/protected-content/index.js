@@ -11,7 +11,10 @@ module.exports = async function (context, req) {
     }
 
     const principal = parsePrincipal(req);
+    const email = getEmail(principal);
     const access = getMicrosoftExampleAccess(principal);
+
+    context.log("protected-content request: slug=" + slug + " hasPrincipal=" + !!principal + " email=" + (email || "null") + " authorized=" + access.authorized + " userDetails=" + (principal && principal.userDetails || "null"));
 
     if (!access.authorized) {
         context.res = {

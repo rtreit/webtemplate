@@ -87,6 +87,10 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleHidden(siteAccessForbidden, mode !== 'forbidden');
         toggleHidden(siteShell, mode !== 'site');
 
+        if (mode === 'site') {
+            document.dispatchEvent(new CustomEvent('site-access-granted'));
+        }
+
         if (mode === 'forbidden') {
             const access = details && details.siteAccess ? details.siteAccess : details && details.microsoftExample ? details.microsoftExample : null;
             if (siteAccessForbiddenMessage) {

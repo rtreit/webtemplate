@@ -37,35 +37,39 @@
         return;
     }
 
-    fetch('/api/protected-content/' + encodeURIComponent(slug), {
-        method: 'GET',
-        credentials: 'include',
-    })
-        .then(function(response) {
-            if (response.ok) {
-                return response.text().then(function(html) {
-                    body.innerHTML = html;
-                    loading.classList.add('is-hidden');
-                    body.classList.remove('is-hidden');
-                });
-            }
-
-            return response.json().catch(function() {
-                return { message: 'Access denied.', allowedDomains: [] };
-            }).then(function(data) {
-                if (deniedMessage && data.message) {
-                    deniedMessage.textContent = data.message;
-                }
-                if (deniedDomains && Array.isArray(data.allowedDomains) && data.allowedDomains.length) {
-                    deniedDomains.textContent = data.allowedDomains.join(', ');
-                }
-                loading.classList.add('is-hidden');
-                denied.classList.remove('is-hidden');
-            });
+    function loadContent() {
+        fetch('/api/protected-content/' + encodeURIComponent(slug), {
+            method: 'GET',
+            credentials: 'include',
         })
-        .catch(function() {
-            loading.textContent = 'Failed to load content. Try refreshing.';
-        });
+            .then(function(response) {
+                if (response.ok) {
+                    return response.text().then(function(html) {
+                        body.innerHTML = html;
+                        loading.classList.add('is-hidden');
+                        body.classList.remove('is-hidden');
+                    });
+                }
+
+                return response.json().catch(function() {
+                    return { message: 'Access denied.', allowedDomains: [] };
+                }).then(function(data) {
+                    if (deniedMessage && data.message) {
+                        deniedMessage.textContent = data.message;
+                    }
+                    if (deniedDomains && Array.isArray(data.allowedDomains) && data.allowedDomains.length) {
+                        deniedDomains.textContent = data.allowedDomains.join(', ');
+                    }
+                    loading.classList.add('is-hidden');
+                    denied.classList.remove('is-hidden');
+                });
+            })
+            .catch(function() {
+                loading.textContent = 'Failed to load content. Try refreshing.';
+            });
+    }
+
+    document.addEventListener('site-access-granted', loadContent, { once: true });
 })();
 </script>
 {{ end }}
