@@ -58,17 +58,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return window.location.pathname + window.location.search + window.location.hash;
     }
 
-    function buildLogoutHref(finalRedirect) {
-        var swaLogout = '/.auth/logout?post_logout_redirect_uri=' + encodeURIComponent(finalRedirect);
-        var siteOrigin = window.location.origin;
-        return 'https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=' + encodeURIComponent(siteOrigin + swaLogout);
-    }
-
     function setAuthRedirectLinks() {
         var redirect = currentRedirectPath() || '/';
-        var loginHref = '/.auth/login/aad?post_login_redirect_uri=' + encodeURIComponent(redirect) + '&prompt=select_account';
-        var logoutHref = buildLogoutHref(redirect);
-        var switchHref = buildLogoutHref('/.auth/login/aad?post_login_redirect_uri=' + encodeURIComponent(redirect) + '&prompt=select_account');
+        var encodedRedirect = encodeURIComponent(redirect);
+        var loginHref = '/.auth/login/aad?post_login_redirect_uri=' + encodedRedirect + '&prompt=login';
+        var logoutHref = '/.auth/logout?post_logout_redirect_uri=' + encodedRedirect;
+        var switchHref = '/.auth/logout?post_logout_redirect_uri=' + encodeURIComponent('/.auth/login/aad?post_login_redirect_uri=' + encodedRedirect + '&prompt=login');
 
         [siteAccessLoadingLoginLink, siteAccessLoginLink, authLoginLink].forEach(function(el) {
             if (el) { el.setAttribute('href', loginHref); }
