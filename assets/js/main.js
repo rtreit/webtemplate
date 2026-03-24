@@ -59,40 +59,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function setAuthRedirectLinks() {
-        const redirect = encodeURIComponent(currentRedirectPath() || '/');
-        const loginHref = '/.auth/login/aad?post_login_redirect_uri=' + redirect + '&prompt=select_account';
-        const logoutHref = '/.auth/logout?post_logout_redirect_uri=' + redirect;
+        var redirect = encodeURIComponent(currentRedirectPath() || '/');
+        var loginHref = '/.auth/login/aad?post_login_redirect_uri=' + redirect + '&prompt=select_account';
+        var logoutHref = '/.auth/logout?post_logout_redirect_uri=' + redirect;
+        var switchHref = '/.auth/logout?post_logout_redirect_uri=' + encodeURIComponent('/.auth/login/aad?post_login_redirect_uri=' + redirect + '&prompt=select_account');
 
-        if (siteAccessLoadingLoginLink) {
-            siteAccessLoadingLoginLink.setAttribute('href', loginHref);
-        }
+        [siteAccessLoadingLoginLink, siteAccessLoginLink, authLoginLink].forEach(function(el) {
+            if (el) { el.setAttribute('href', loginHref); }
+        });
 
-        if (siteAccessLoadingLogoutLink) {
-            siteAccessLoadingLogoutLink.setAttribute('href', logoutHref);
-        }
-
-        if (siteAccessLoginLink) {
-            siteAccessLoginLink.setAttribute('href', loginHref);
-        }
-
-        if (siteAccessLoginLogoutLink) {
-            siteAccessLoginLogoutLink.setAttribute('href', logoutHref);
-        }
+        [siteAccessLoadingLogoutLink, siteAccessLoginLogoutLink, siteAccessLogoutLink, authLogoutLink].forEach(function(el) {
+            if (el) { el.setAttribute('href', logoutHref); }
+        });
 
         if (siteAccessForbiddenLoginLink) {
-            siteAccessForbiddenLoginLink.setAttribute('href', loginHref);
-        }
-
-        if (siteAccessLogoutLink) {
-            siteAccessLogoutLink.setAttribute('href', logoutHref);
-        }
-
-        if (authLoginLink) {
-            authLoginLink.setAttribute('href', loginHref);
-        }
-
-        if (authLogoutLink) {
-            authLogoutLink.setAttribute('href', logoutHref);
+            siteAccessForbiddenLoginLink.setAttribute('href', switchHref);
         }
     }
 
