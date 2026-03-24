@@ -4,8 +4,8 @@
     {{- partial "head.html" . -}}
 </head>
 <body>
-    <div class="site-access-gate" id="site-access-gate" aria-live="polite">
-        <section class="site-access-panel" id="site-access-loading">
+    <div class="site-access-gate is-hidden" id="site-access-gate" aria-live="polite">
+        <section class="site-access-panel is-hidden" id="site-access-loading">
             <p class="site-access-kicker">Authorized access required</p>
             <h1>{{ .Site.Title }}</h1>
             <p>{{ .Site.Params.tagline }}</p>

@@ -81,8 +81,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function showAccessState(mode, details) {
         authGateResolved = mode !== 'loading';
-        toggleHidden(siteAccessGate, mode === 'site');
-        toggleHidden(siteAccessLoading, mode !== 'loading');
+        var showGate = mode === 'login' || mode === 'forbidden';
+        toggleHidden(siteAccessGate, !showGate);
+        toggleHidden(siteAccessLoading, true);
         toggleHidden(siteAccessLogin, mode !== 'login');
         toggleHidden(siteAccessForbidden, mode !== 'forbidden');
         toggleHidden(siteShell, mode !== 'site');
