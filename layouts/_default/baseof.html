@@ -12,7 +12,7 @@
             <p class="site-access-copy">Checking your sign-in state and authorized email domain.</p>
             <div class="site-access-actions">
                 <a class="auth-link auth-link-login" id="site-access-loading-login-link" href="/.auth/login/aad?post_login_redirect_uri=/" title="Choose a Microsoft account">Choose account</a>
-                <a class="auth-link auth-link-logout" id="site-access-loading-logout-link" href="/.auth/purge/aad?post_logout_redirect_uri=%2F.auth%2Flogout%3Fpost_logout_redirect_uri%3D%2F" title="Sign out">Logout</a>
+                <a class="auth-link auth-link-logout" id="site-access-loading-logout-link" href="/.auth/logout?post_logout_redirect_uri=/" title="Sign out">Logout</a>
             </div>
         </section>
 
@@ -22,7 +22,7 @@
             <p class="site-access-copy">This example site only renders for signed-in users from authorized domains.</p>
             <div class="site-access-actions">
                 <a class="auth-link auth-link-login" id="site-access-login-link" href="/.auth/login/aad?post_login_redirect_uri=/" title="Sign in with Microsoft">Login with Microsoft</a>
-                <a class="auth-link auth-link-logout" id="site-access-login-logout-link" href="/.auth/purge/aad?post_logout_redirect_uri=%2F.auth%2Flogout%3Fpost_logout_redirect_uri%3D%2F" title="Sign out">Logout</a>
+                <a class="auth-link auth-link-logout" id="site-access-login-logout-link" href="/.auth/logout?post_logout_redirect_uri=/" title="Sign out">Logout</a>
             </div>
         </section>
 
@@ -35,8 +35,8 @@
                 <code id="site-access-forbidden-domains">microsoft.com, ntdev.microsoft.com</code>
             </p>
             <div class="site-access-actions">
-                <a class="auth-link auth-link-login" id="site-access-forbidden-login-link" href="/.auth/purge/aad?post_logout_redirect_uri=%2F.auth%2Flogout%3Fpost_logout_redirect_uri%3D%252F.auth%252Flogin%252Faad%253Fpost_login_redirect_uri%253D%252F" title="Choose a different Microsoft account">Switch account</a>
-                <a class="auth-link auth-link-logout" id="site-access-logout-link" href="/.auth/purge/aad?post_logout_redirect_uri=%2F.auth%2Flogout%3Fpost_logout_redirect_uri%3D%2F" title="Sign out">Logout</a>
+                <a class="auth-link auth-link-login" id="site-access-forbidden-login-link" href="/.auth/logout?post_logout_redirect_uri=%2F.auth%2Flogin%2Faad%3Fpost_login_redirect_uri%3D%2F" title="Choose a different Microsoft account">Switch account</a>
+                <a class="auth-link auth-link-logout" id="site-access-logout-link" href="/.auth/logout?post_logout_redirect_uri=/" title="Sign out">Logout</a>
             </div>
         </section>
     </div>
