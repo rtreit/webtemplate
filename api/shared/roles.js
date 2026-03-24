@@ -29,7 +29,25 @@ function parsePrincipal(req) {
 
 function getEmail(principal) {
     if (!principal || !principal.userDetails) return null;
-    return String(principal.userDetails).trim().toLowerCase();
+    const normalized = String(principal.userDetails).trim().toLowerCase();
+    const externalMatch = normalized.match(/^(.+?)#ext#@.+$/);
+    if (!externalMatch) {
+        return normalized;
+    }
+
+    const guestAlias = externalMatch[1];
+    const separatorIndex = guestAlias.lastIndexOf("_");
+    if (separatorIndex <= 0 || separatorIndex === guestAlias.length - 1) {
+        return normalized;
+    }
+
+    const localPart = guestAlias.slice(0, separatorIndex);
+    const externalDomain = guestAlias.slice(separatorIndex + 1);
+    if (!localPart || !externalDomain) {
+        return normalized;
+    }
+
+    return localPart + "@" + externalDomain;
 }
 
 function getEmailDomain(email) {

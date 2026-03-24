@@ -4,7 +4,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const siteAccessLoading = document.getElementById('site-access-loading');
     const siteAccessLogin = document.getElementById('site-access-login');
     const siteAccessForbidden = document.getElementById('site-access-forbidden');
+    const siteAccessLoadingLoginLink = document.getElementById('site-access-loading-login-link');
+    const siteAccessLoadingLogoutLink = document.getElementById('site-access-loading-logout-link');
     const siteAccessLoginLink = document.getElementById('site-access-login-link');
+    const siteAccessLoginLogoutLink = document.getElementById('site-access-login-logout-link');
+    const siteAccessForbiddenLoginLink = document.getElementById('site-access-forbidden-login-link');
     const siteAccessLogoutLink = document.getElementById('site-access-logout-link');
     const siteAccessForbiddenMessage = document.getElementById('site-access-forbidden-message');
     const siteAccessForbiddenDomains = document.getElementById('site-access-forbidden-domains');
@@ -20,6 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const root = document.documentElement;
     const themeStorageKey = 'theme-preference';
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    let authGateResolved = false;
 
     if (navToggle && links) {
         navToggle.addEventListener('click', function() {
@@ -55,19 +60,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function setAuthRedirectLinks() {
         const redirect = encodeURIComponent(currentRedirectPath() || '/');
-        const loginHref = '/.auth/login/aad?post_login_redirect_uri=' + redirect;
+        const loginHref = '/.auth/login/aad?post_login_redirect_uri=' + redirect + '&prompt=select_account';
         const logoutHref = '/.auth/logout?post_logout_redirect_uri=' + redirect;
+
+        if (siteAccessLoadingLoginLink) {
+            siteAccessLoadingLoginLink.setAttribute('href', loginHref);
+        }
+
+        if (siteAccessLoadingLogoutLink) {
+            siteAccessLoadingLogoutLink.setAttribute('href', logoutHref);
+        }
 
         if (siteAccessLoginLink) {
             siteAccessLoginLink.setAttribute('href', loginHref);
         }
 
+        if (siteAccessLoginLogoutLink) {
+            siteAccessLoginLogoutLink.setAttribute('href', logoutHref);
+        }
+
+        if (siteAccessForbiddenLoginLink) {
+            siteAccessForbiddenLoginLink.setAttribute('href', loginHref);
+        }
+
         if (siteAccessLogoutLink) {
             siteAccessLogoutLink.setAttribute('href', logoutHref);
+        }
+
+        if (authLoginLink) {
+            authLoginLink.setAttribute('href', loginHref);
+        }
+
+        if (authLogoutLink) {
+            authLogoutLink.setAttribute('href', logoutHref);
         }
     }
 
     function showAccessState(mode, details) {
+        authGateResolved = mode !== 'loading';
         toggleHidden(siteAccessGate, false);
         toggleHidden(siteAccessLoading, mode !== 'loading');
         toggleHidden(siteAccessLogin, mode !== 'login');
@@ -276,5 +306,10 @@ document.addEventListener('DOMContentLoaded', function() {
     setAuthRedirectLinks();
     syncThemeToggleUi();
     showAccessState('loading');
+    window.setTimeout(function() {
+        if (!authGateResolved) {
+            showAccessState('login');
+        }
+    }, 5000);
     syncAuthUi();
 });
