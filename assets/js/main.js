@@ -63,8 +63,9 @@ document.addEventListener('DOMContentLoaded', function() {
         var redirect = currentRedirectPath() || '/';
         var encodedRedirect = encodeURIComponent(redirect);
         var loginHref = '/.auth/login/aad?post_login_redirect_uri=' + encodedRedirect;
-        var logoutHref = '/.auth/logout?post_logout_redirect_uri=' + encodedRedirect;
-        var switchHref = '/.auth/logout?post_logout_redirect_uri=' + encodeURIComponent('/.auth/login/aad?post_login_redirect_uri=' + redirect);
+        var entraLogout = 'https://login.microsoftonline.com/common/oauth2/v2.0/logout?post_logout_redirect_uri=' + encodeURIComponent(window.location.origin + '/');
+        var logoutHref = '/.auth/logout?post_logout_redirect_uri=' + encodeURIComponent(entraLogout);
+        var switchHref = logoutHref;
 
         [siteAccessLoadingLoginLink, siteAccessLoginLink, authLoginLink].forEach(function(el) {
             if (el) { el.setAttribute('href', loginHref); }
