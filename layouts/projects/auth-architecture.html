@@ -1,0 +1,241 @@
+{{ define "main" }}
+<article class="post auth-architecture">
+    <header class="post-header">
+        <h1>{{ .Title }}</h1>
+        <p class="post-card-excerpt">{{ .Description }}</p>
+    </header>
+
+    <div class="post-content">
+        <nav class="arch-toc">
+            <h2>Contents</h2>
+            <ol>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#authentication-flow">Authentication flow</a></li>
+                <li><a href="#authorization-flow">Authorization flow</a></li>
+                <li><a href="#site-wide-gate">Site-wide gate</a></li>
+                <li><a href="#data-flow">Data flow: x-ms-client-principal</a></li>
+                <li><a href="#guest-identity">Guest identity normalization</a></li>
+                <li><a href="#role-system">Role system</a></li>
+                <li><a href="#security-boundaries">Security boundaries</a></li>
+                <li><a href="#configuration">Configuration reference</a></li>
+            </ol>
+        </nav>
+
+        <section id="overview">
+            <h2>Overview</h2>
+            <p>This starter kit separates <strong>authentication</strong> (proving who you are) from <strong>authorization</strong> (deciding what you can see). Authentication is delegated entirely to Azure Static Web Apps EasyAuth and Microsoft Entra ID. Authorization is enforced server-side in Azure Functions by inspecting the trusted identity header that EasyAuth injects after sign-in.</p>
+            <p>The site renders through a client-side gate that hides all content until both checks pass. Unauthorized users see a 403 state. Unauthenticated users see a login prompt.</p>
+        </section>
+
+        <section id="authentication-flow">
+            <h2>Authentication flow</h2>
+            <p>Azure Static Web Apps provides a preconfigured Microsoft Entra identity provider. No app registration is required for the default flow. Any Microsoft account can authenticate.</p>
+            <div class="mermaid">
+sequenceDiagram
+    participant Browser
+    participant SWA as Static Web App
+    participant Entra as Microsoft Entra ID
+
+    Browser->>SWA: GET /.auth/login/aad
+    SWA->>Entra: Redirect to Entra login
+    Entra->>Browser: Show credential prompt
+    Browser->>Entra: Submit credentials
+    Entra->>SWA: Return auth token
+    SWA->>SWA: Validate token, create session cookie
+    SWA->>Browser: Set session cookie, redirect to post_login_redirect_uri
+            </div>
+            <h3>Key points</h3>
+            <ul>
+                <li>The login endpoint is <code>/.auth/login/aad</code>. The <code>post_login_redirect_uri</code> parameter controls where the user lands after login.</li>
+                <li>Adding <code>prompt=login</code> forces Entra to show the credential entry screen even if the user has an active Entra session.</li>
+                <li>The logout endpoint is <code>/.auth/logout</code>. This clears the SWA session cookie but does <strong>not</strong> clear the Entra browser session. To fully clear both, the site chains logout through the Entra logout endpoint first.</li>
+                <li>The <code>/.auth/me</code> endpoint returns the current user's identity as a JSON payload.</li>
+            </ul>
+        </section>
+
+        <section id="authorization-flow">
+            <h2>Authorization flow</h2>
+            <p>After authentication, the browser calls <code>/api/check-role</code> to determine whether the signed-in user is authorized to view the site. The Function reads the trusted <code>x-ms-client-principal</code> header, extracts the email domain, and compares it against the configured allowed domain list.</p>
+            <div class="mermaid">
+sequenceDiagram
+    participant Browser
+    participant SWA as Static Web App Edge
+    participant API as Azure Function
+
+    Browser->>SWA: GET /api/check-role (with session cookie)
+    SWA->>SWA: Validate session cookie
+    SWA->>API: Forward request + x-ms-client-principal header
+    API->>API: Decode base64 principal
+    API->>API: Extract userDetails email
+    API->>API: Normalize guest #EXT# identities
+    API->>API: Match email domain against MICROSOFT_EXAMPLE_ALLOWED_DOMAINS
+    API->>Browser: Return { hasSiteAccess, role, email, emailDomain, ... }
+            </div>
+        </section>
+
+        <section id="site-wide-gate">
+            <h2>Site-wide gate</h2>
+            <p>The base layout (<code>layouts/_default/baseof.html</code>) ships with the real site shell hidden. A JavaScript gate checks auth state and transitions between three visual states:</p>
+            <div class="mermaid">
+stateDiagram-v2
+    [*] --> Loading: Page load
+    Loading --> LoginPrompt: /.auth/me returns no principal
+    Loading --> Forbidden: /api/check-role returns hasSiteAccess=false
+    Loading --> SiteShell: /api/check-role returns hasSiteAccess=true
+    Forbidden --> LoginPrompt: User clicks Switch Account (logout then login)
+    LoginPrompt --> Loading: User completes login
+    SiteShell --> [*]: User browses normally
+            </div>
+            <table>
+                <thead>
+                    <tr><th>State</th><th>What the user sees</th><th>Trigger</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Loading</strong></td><td>Brief "Checking your sign-in" panel with Choose Account and Logout links</td><td>Initial page load</td></tr>
+                    <tr><td><strong>Login prompt</strong></td><td>"Sign in to continue" with Login with Microsoft button</td><td>No authenticated session detected</td></tr>
+                    <tr><td><strong>403 Forbidden</strong></td><td>Red 403 panel showing the signed-in email and allowed domain list</td><td>Authenticated but email domain not in the allowed list</td></tr>
+                    <tr><td><strong>Site shell</strong></td><td>Full site with navigation, content, and footer</td><td>Authenticated and authorized</td></tr>
+                </tbody>
+            </table>
+            <p>A 5-second timeout ensures the gate always resolves to the login prompt if the auth check hangs.</p>
+        </section>
+
+        <section id="data-flow">
+            <h2>Data flow: x-ms-client-principal</h2>
+            <p>Azure Static Web Apps injects a Base64-encoded JSON header called <code>x-ms-client-principal</code> into every request forwarded to Azure Functions. This header is <strong>set by the SWA edge</strong>, not by the browser, so it cannot be spoofed by client-side code.</p>
+            <div class="mermaid">
+flowchart LR
+    A[Browser] -->|Session cookie| B[SWA Edge]
+    B -->|x-ms-client-principal header| C[Azure Function]
+    C -->|Decode Base64| D[JSON principal]
+    D -->|Read userDetails| E[Email address]
+    E -->|Extract domain| F[Authorization decision]
+            </div>
+            <h3>Principal structure (in API Functions)</h3>
+            <pre><code>{
+  "identityProvider": "aad",
+  "userId": "abcd12345...",
+  "userDetails": "user@microsoft.com",
+  "userRoles": ["anonymous", "authenticated"]
+}</code></pre>
+            <p><strong>Important limitation:</strong> The <code>claims</code> array is available at <code>/.auth/me</code> (browser-side) but is <strong>not</strong> included in the <code>x-ms-client-principal</code> header forwarded to API Functions. This is why authorization uses <code>userDetails</code> (email) rather than token claims like <code>tid</code>.</p>
+        </section>
+
+        <section id="guest-identity">
+            <h2>Guest identity normalization</h2>
+            <p>When a user from one Microsoft Entra tenant authenticates against a Static Web App deployed in a different tenant, the <code>userDetails</code> field may arrive in a guest-style format:</p>
+            <pre><code>randyt_microsoft.com#EXT#@othertenant.onmicrosoft.com</code></pre>
+            <p>The shared auth helper in <code>api/shared/roles.js</code> detects this pattern and normalizes it back to the original email:</p>
+            <div class="mermaid">
+flowchart LR
+    A["randyt_microsoft.com#EXT#@othertenant.onmicrosoft.com"] --> B["Detect #EXT# pattern"]
+    B --> C["Extract local part: randyt"]
+    B --> D["Extract domain: microsoft.com"]
+    C --> E["randyt@microsoft.com"]
+    D --> E
+            </div>
+            <p>This ensures cross-tenant guest identities are correctly matched against the allowed domain list.</p>
+        </section>
+
+        <section id="role-system">
+            <h2>Role system</h2>
+            <p>Beyond the domain-based site gate, the starter kit includes a blob-backed role system for finer-grained access control:</p>
+            <div class="mermaid">
+flowchart TD
+    A[User signs in] --> B{Email in roles.json?}
+    B -->|admin list| C[Admin role]
+    B -->|member list| D[Member role]
+    B -->|not found| E[Default: visitor role]
+    C --> F[Can manage roles at /admin/]
+    D --> G[Can see member content]
+    E --> H[Basic site access only]
+            </div>
+            <table>
+                <thead>
+                    <tr><th>Role</th><th>Source</th><th>Capabilities</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>anonymous</strong></td><td>Built-in SWA role</td><td>See login prompt only</td></tr>
+                    <tr><td><strong>authenticated</strong></td><td>Built-in SWA role</td><td>Pass the site-wide gate (if domain is authorized)</td></tr>
+                    <tr><td><strong>visitor</strong></td><td>Default app role</td><td>See public project cards</td></tr>
+                    <tr><td><strong>member</strong></td><td>Assigned in roles.json</td><td>See member-only project cards and /members/ content</td></tr>
+                    <tr><td><strong>admin</strong></td><td>Assigned in roles.json or BOOTSTRAP_ADMIN_EMAIL</td><td>Full access including /admin/ role management</td></tr>
+                </tbody>
+            </table>
+            <p>The role configuration lives in Azure Blob Storage at <code>site-config/roles.json</code>. On first run, the system creates a default config with the <code>BOOTSTRAP_ADMIN_EMAIL</code> as the initial admin.</p>
+        </section>
+
+        <section id="security-boundaries">
+            <h2>Security boundaries</h2>
+            <div class="mermaid">
+flowchart TD
+    subgraph "Trust boundary: SWA Edge"
+        A[Token validation] --> B[Session management]
+        B --> C[x-ms-client-principal injection]
+    end
+    subgraph "Trust boundary: Azure Functions"
+        D[Read x-ms-client-principal] --> E[Domain authorization]
+        E --> F[Role resolution]
+        F --> G[Return data or 403]
+    end
+    subgraph "No trust: Browser"
+        H[JavaScript gate] --> I[UI show/hide]
+    end
+    C --> D
+    G --> H
+            </div>
+            <table>
+                <thead>
+                    <tr><th>Layer</th><th>What it enforces</th><th>Trust level</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>SWA Edge</strong></td><td>Token validation, session cookies, header injection</td><td>Fully trusted (platform-managed)</td></tr>
+                    <tr><td><strong>Azure Functions</strong></td><td>Domain authorization, role checks, 403 responses</td><td>Trusted (server-side, reads platform-injected headers)</td></tr>
+                    <tr><td><strong>Browser JavaScript</strong></td><td>UI gating (show/hide site shell)</td><td>Not trusted (presentation only, can be bypassed)</td></tr>
+                    <tr><td><strong>Static HTML</strong></td><td>Nothing</td><td>Public files, always served to the browser</td></tr>
+                </tbody>
+            </table>
+            <p>The real security boundary is the Azure Function. The JavaScript gate and static HTML are convenience layers. Protected data must always be served through authenticated API endpoints, never baked into static HTML.</p>
+        </section>
+
+        <section id="configuration">
+            <h2>Configuration reference</h2>
+            <table>
+                <thead>
+                    <tr><th>Setting</th><th>Where</th><th>Purpose</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>MICROSOFT_EXAMPLE_ALLOWED_DOMAINS</code></td><td>Azure App Settings / .env</td><td>Comma-separated list of authorized email domains (e.g. <code>microsoft.com,ntdev.microsoft.com</code>). Subdomains of each base domain are also allowed.</td></tr>
+                    <tr><td><code>BOOTSTRAP_ADMIN_EMAIL</code></td><td>Azure App Settings / .env</td><td>Email address that gets the initial admin role on first run.</td></tr>
+                    <tr><td><code>STORAGE_CONNECTION_STRING</code></td><td>Azure App Settings / .env</td><td>Azure Storage connection string for the role config blob container.</td></tr>
+                </tbody>
+            </table>
+            <h3>Files involved</h3>
+            <table>
+                <thead>
+                    <tr><th>File</th><th>Responsibility</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>layouts/_default/baseof.html</code></td><td>Site-wide gate HTML (loading, login, forbidden, site shell)</td></tr>
+                    <tr><td><code>assets/js/main.js</code></td><td>Client-side auth check, gate state transitions, link management</td></tr>
+                    <tr><td><code>api/shared/roles.js</code></td><td>Server-side auth helpers: principal parsing, email normalization, domain matching, role resolution</td></tr>
+                    <tr><td><code>api/check-role/index.js</code></td><td>Auth status API consumed by the browser gate and project cards</td></tr>
+                    <tr><td><code>api/microsoft-example/index.js</code></td><td>Protected endpoint returning example payload only to authorized domains</td></tr>
+                    <tr><td><code>static/staticwebapp.config.json</code></td><td>SWA routing, fallback, and header configuration</td></tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
+</article>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: document.documentElement.getAttribute('data-theme') === 'light' ? 'default' : 'dark',
+        securityLevel: 'loose',
+        flowchart: { useMaxWidth: true, htmlLabels: true },
+        sequence: { useMaxWidth: true }
+    });
+</script>
+{{ end }}

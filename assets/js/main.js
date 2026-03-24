@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const authLogoutLink = document.getElementById('auth-logout-link');
     const memberZoneLink = document.getElementById('member-zone-link');
     const microsoftExampleLink = document.getElementById('microsoft-example-link');
+    const authArchitectureLink = document.getElementById('auth-architecture-link');
     const adminLink = document.getElementById('admin-link');
     const authUserDisplay = document.getElementById('auth-user-display');
     const themeToggle = document.getElementById('theme-toggle');
@@ -153,6 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleHidden(authLogoutLink, true);
         toggleHidden(memberZoneLink, true);
         toggleHidden(microsoftExampleLink, true);
+        toggleHidden(authArchitectureLink, true);
         toggleHidden(adminLink, true);
         toggleHidden(authUserDisplay, true);
         applyProjectAccess({ authenticated: false, role: 'anonymous', emailDomain: null, isAdmin: false, hasMicrosoftExampleAccess: false });
@@ -206,6 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!roleData.hasSiteAccess) {
                     toggleHidden(memberZoneLink, true);
                     toggleHidden(microsoftExampleLink, true);
+                    toggleHidden(authArchitectureLink, true);
                     toggleHidden(adminLink, true);
                     applyProjectAccess({ authenticated: true, role: roleData.role || 'visitor', emailDomain: roleData.emailDomain, isAdmin: false, hasMicrosoftExampleAccess: false });
                     showAccessState('forbidden', roleData);
@@ -214,12 +217,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 toggleHidden(memberZoneLink, !(roleData.authenticated && (roleData.role === 'member' || roleData.isAdmin)));
                 toggleHidden(microsoftExampleLink, !roleData.hasMicrosoftExampleAccess);
+                toggleHidden(authArchitectureLink, !roleData.hasMicrosoftExampleAccess);
                 toggleHidden(adminLink, !roleData.isAdmin);
                 applyProjectAccess(roleData);
                 showAccessState('site', roleData);
             } catch {
                 toggleHidden(memberZoneLink, true);
                 toggleHidden(microsoftExampleLink, true);
+                toggleHidden(authArchitectureLink, true);
                 toggleHidden(adminLink, true);
                 applyProjectAccess({ authenticated: true, role: 'visitor', emailDomain: null, isAdmin: false, hasMicrosoftExampleAccess: false });
                 showAccessState('forbidden', {
