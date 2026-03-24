@@ -15,7 +15,9 @@ module.exports = async function (context, req) {
                 email: null,
                 emailDomain: null,
                 isAdmin: false,
+                hasSiteAccess: false,
                 hasMicrosoftExampleAccess: false,
+                siteAccess: microsoftExampleAccess,
                 microsoftExample: microsoftExampleAccess,
             },
         };
@@ -35,7 +37,9 @@ module.exports = async function (context, req) {
             email,
             emailDomain,
             isAdmin: role === "admin",
+            hasSiteAccess: microsoftExampleAccess.authorized,
             hasMicrosoftExampleAccess: microsoftExampleAccess.authorized,
+            siteAccess: microsoftExampleAccess,
             microsoftExample: microsoftExampleAccess,
         },
     };

@@ -1,4 +1,13 @@
 document.addEventListener('DOMContentLoaded', function() {
+    const siteShell = document.getElementById('site-shell');
+    const siteAccessGate = document.getElementById('site-access-gate');
+    const siteAccessLoading = document.getElementById('site-access-loading');
+    const siteAccessLogin = document.getElementById('site-access-login');
+    const siteAccessForbidden = document.getElementById('site-access-forbidden');
+    const siteAccessLoginLink = document.getElementById('site-access-login-link');
+    const siteAccessLogoutLink = document.getElementById('site-access-logout-link');
+    const siteAccessForbiddenMessage = document.getElementById('site-access-forbidden-message');
+    const siteAccessForbiddenDomains = document.getElementById('site-access-forbidden-domains');
     const navToggle = document.querySelector('.nav-toggle');
     const links = document.querySelector('.nav-links');
     const authLoginLink = document.getElementById('auth-login-link');
@@ -37,6 +46,48 @@ document.addEventListener('DOMContentLoaded', function() {
             element.setAttribute('aria-hidden', 'true');
         } else {
             element.removeAttribute('aria-hidden');
+        }
+    }
+
+    function currentRedirectPath() {
+        return window.location.pathname + window.location.search + window.location.hash;
+    }
+
+    function setAuthRedirectLinks() {
+        const redirect = encodeURIComponent(currentRedirectPath() || '/');
+        const loginHref = '/.auth/login/aad?post_login_redirect_uri=' + redirect;
+        const logoutHref = '/.auth/logout?post_logout_redirect_uri=' + redirect;
+
+        if (siteAccessLoginLink) {
+            siteAccessLoginLink.setAttribute('href', loginHref);
+        }
+
+        if (siteAccessLogoutLink) {
+            siteAccessLogoutLink.setAttribute('href', logoutHref);
+        }
+    }
+
+    function showAccessState(mode, details) {
+        toggleHidden(siteAccessGate, false);
+        toggleHidden(siteAccessLoading, mode !== 'loading');
+        toggleHidden(siteAccessLogin, mode !== 'login');
+        toggleHidden(siteAccessForbidden, mode !== 'forbidden');
+        toggleHidden(siteShell, mode !== 'site');
+
+        if (mode === 'forbidden') {
+            const access = details && details.siteAccess ? details.siteAccess : details && details.microsoftExample ? details.microsoftExample : null;
+            if (siteAccessForbiddenMessage) {
+                siteAccessForbiddenMessage.textContent = access && access.message
+                    ? access.message
+                    : 'Your signed-in account is not authorized to view this site.';
+            }
+
+            if (siteAccessForbiddenDomains) {
+                const allowedDomains = access && Array.isArray(access.allowedDomains) && access.allowedDomains.length
+                    ? access.allowedDomains
+                    : ['microsoft.com', 'ntdev.microsoft.com'];
+                siteAccessForbiddenDomains.textContent = allowedDomains.join(', ');
+            }
         }
     }
 
@@ -93,6 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleHidden(adminLink, true);
         toggleHidden(authUserDisplay, true);
         applyProjectAccess({ authenticated: false, role: 'anonymous', emailDomain: null, isAdmin: false, hasMicrosoftExampleAccess: false });
+        showAccessState('login');
     }
 
     async function syncAuthUi() {
@@ -134,15 +186,36 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const roleResp = await fetch('/api/check-role', { credentials: 'include' });
                 const roleData = await roleResp.json();
+                if (!roleData.authenticated) {
+                    renderLoggedOutState();
+                    return;
+                }
+
+                if (!roleData.hasSiteAccess) {
+                    toggleHidden(memberZoneLink, true);
+                    toggleHidden(microsoftExampleLink, true);
+                    toggleHidden(adminLink, true);
+                    applyProjectAccess({ authenticated: true, role: roleData.role || 'visitor', emailDomain: roleData.emailDomain, isAdmin: false, hasMicrosoftExampleAccess: false });
+                    showAccessState('forbidden', roleData);
+                    return;
+                }
+
                 toggleHidden(memberZoneLink, !(roleData.authenticated && (roleData.role === 'member' || roleData.isAdmin)));
                 toggleHidden(microsoftExampleLink, !roleData.hasMicrosoftExampleAccess);
                 toggleHidden(adminLink, !roleData.isAdmin);
                 applyProjectAccess(roleData);
+                showAccessState('site', roleData);
             } catch {
                 toggleHidden(memberZoneLink, true);
                 toggleHidden(microsoftExampleLink, true);
                 toggleHidden(adminLink, true);
                 applyProjectAccess({ authenticated: true, role: 'visitor', emailDomain: null, isAdmin: false, hasMicrosoftExampleAccess: false });
+                showAccessState('forbidden', {
+                    siteAccess: {
+                        message: 'Unable to verify your authorization right now. Try refreshing or signing in again.',
+                        allowedDomains: ['microsoft.com', 'ntdev.microsoft.com'],
+                    },
+                });
             }
         } catch (err) {
             renderLoggedOutState();
@@ -200,6 +273,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    setAuthRedirectLinks();
     syncThemeToggleUi();
+    showAccessState('loading');
     syncAuthUi();
 });

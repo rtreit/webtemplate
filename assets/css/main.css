@@ -119,6 +119,80 @@ body {
     flex-direction: column;
 }
 
+.site-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.site-access-gate {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+}
+
+.site-access-panel {
+    width: min(100%, 40rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, var(--bg-secondary), color-mix(in srgb, var(--bg-secondary) 80%, black));
+    box-shadow: var(--shadow-lg);
+    padding: 2rem;
+}
+
+.site-access-panel h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    margin-bottom: 1rem;
+}
+
+.site-access-kicker {
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 0.85rem;
+}
+
+.site-access-copy,
+.site-access-rule {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.site-access-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1.25rem;
+}
+
+.site-access-panel-forbidden {
+    border-color: rgba(239, 68, 68, 0.45);
+    background: linear-gradient(180deg, rgba(127, 29, 29, 0.35), rgba(69, 10, 10, 0.75));
+}
+
+.site-access-panel-forbidden .site-access-kicker,
+.site-access-panel-forbidden h1 {
+    color: #fecaca;
+}
+
+.site-access-panel-forbidden .site-access-copy,
+.site-access-panel-forbidden .site-access-rule {
+    color: #fee2e2;
+}
+
+.site-access-rule code {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius);
+    padding: 0.2rem 0.45rem;
+}
+
 a {
     color: var(--accent);
     text-decoration: none;

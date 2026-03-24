@@ -59,7 +59,7 @@ Login and logout are handled by Azure Static Web Apps EasyAuth:
 
 The browser checks auth state and updates the UI. Azure Functions enforce authorization using the `x-ms-client-principal` header injected by Static Web Apps after sign-in.
 
-EasyAuth sign-in stays open to any Microsoft account. This starter also includes an authorized-domain example at `/microsoft-example/`. Its protected payload comes from `/api/microsoft-example`, which only returns data to signed-in users whose `x-ms-client-principal.userDetails` email domain matches the allowed domain list. By default, `MICROSOFT_EXAMPLE_ALLOWED_DOMAINS` falls back to `microsoft.com,ntdev.microsoft.com`, and subdomains such as `azure.microsoft.com` are also allowed for each configured base domain.
+EasyAuth sign-in stays open to any Microsoft account. The site now renders through a login-first gate: unauthenticated visitors see a sign-in prompt, signed-in users outside the authorized domains see a full-site 403 state, and only authorized users get the example site shell. The authorization check uses `/api/check-role` plus `x-ms-client-principal.userDetails` email domain matching on the backend. By default, `MICROSOFT_EXAMPLE_ALLOWED_DOMAINS` falls back to `microsoft.com,ntdev.microsoft.com`, and subdomains such as `azure.microsoft.com` are also allowed for each configured base domain.
 
 ## Role bootstrap
 
@@ -73,7 +73,7 @@ After signing in as the bootstrap admin, open `/admin/` to manage roles.
 
 ## Real security note
 
-This starter can hide or reveal UI based on auth state, but static HTML pages are still public files once deployed. The Microsoft authorized-domain project card and navigation link are hidden in the browser for other users, but the actual example data is protected by `/api/microsoft-example`. Use Azure Functions or other backend APIs for truly sensitive data or privileged operations.
+This starter now gates the visible site experience behind sign-in and authorized-domain checks, but the underlying static HTML still ships to the browser because Hugo outputs static files. The protected example data is still enforced by `/api/microsoft-example`, which is the real security boundary. Use Azure Functions or other backend APIs for truly sensitive data or privileged operations.
 
 ## Deployment
 
