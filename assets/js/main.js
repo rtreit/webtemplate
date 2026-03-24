@@ -62,16 +62,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function setAuthRedirectLinks() {
         var redirect = currentRedirectPath() || '/';
         var encodedRedirect = encodeURIComponent(redirect);
-        var loginHref = '/.auth/login/aad?post_login_redirect_uri=' + encodedRedirect + '&prompt=login';
-        var logoutHref = '/.auth/logout?post_logout_redirect_uri=' + encodedRedirect;
-        var switchHref = '/.auth/logout?post_logout_redirect_uri=' + encodeURIComponent('/.auth/login/aad?post_login_redirect_uri=' + encodedRedirect + '&prompt=login');
+        var loginHref = '/.auth/login/aad?post_login_redirect_uri=' + encodedRedirect;
+        var purgeAndLogoutHref = '/.auth/purge/aad?post_logout_redirect_uri=' + encodeURIComponent('/.auth/logout?post_logout_redirect_uri=' + redirect);
+        var switchHref = '/.auth/purge/aad?post_logout_redirect_uri=' + encodeURIComponent('/.auth/logout?post_logout_redirect_uri=' + encodeURIComponent('/.auth/login/aad?post_login_redirect_uri=' + redirect));
 
         [siteAccessLoadingLoginLink, siteAccessLoginLink, authLoginLink].forEach(function(el) {
             if (el) { el.setAttribute('href', loginHref); }
         });
 
         [siteAccessLoadingLogoutLink, siteAccessLoginLogoutLink, siteAccessLogoutLink, authLogoutLink].forEach(function(el) {
-            if (el) { el.setAttribute('href', logoutHref); }
+            if (el) { el.setAttribute('href', purgeAndLogoutHref); }
         });
 
         if (siteAccessForbiddenLoginLink) {
