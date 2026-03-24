@@ -171,6 +171,13 @@ body {
     margin-top: 1.25rem;
 }
 
+.site-access-hint {
+    margin-top: 1.25rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
 .site-access-panel-forbidden {
     border-color: rgba(239, 68, 68, 0.45);
     background: linear-gradient(180deg, rgba(127, 29, 29, 0.35), rgba(69, 10, 10, 0.75));
