@@ -36,6 +36,7 @@ module.exports = async function (context, req) {
             role,
             email,
             emailDomain,
+            rawUserDetails: principal.userDetails || null,
             isAdmin: role === "admin",
             hasSiteAccess: microsoftExampleAccess.authorized,
             hasMicrosoftExampleAccess: microsoftExampleAccess.authorized,

@@ -121,10 +121,11 @@ function getMicrosoftExampleAccess(principal) {
             authenticated: true,
             user: email,
             emailDomain,
+            rawUserDetails: principal.userDetails || null,
             allowedDomains,
             matchedDomain: null,
             accessRule,
-            message: "Signed in as " + email + ", but this example requires a usable email domain in x-ms-client-principal.userDetails.",
+            message: "Signed in as " + email + " (raw userDetails: " + (principal.userDetails || "empty") + "), but this example requires a usable email domain in x-ms-client-principal.userDetails.",
         };
     }
 
